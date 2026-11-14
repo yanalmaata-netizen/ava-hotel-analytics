@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Аналитика продаж для отелей – Ava Solutions</title>
+<meta name="description" content="Каждое утро в Telegram: выручка, прогноз, цены конкурентов, отзывы и контроль. Демо-версия, видео и скрины.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Аналитика продаж для отелей – Ava Solutions">
+<meta property="og:description" content="Каждое утро в Telegram: что произошло, что будет и что сделать. Демо-версия внутри.">
+<meta property="og:image" content="https://yanalmaata-netizen.github.io/ava-hotel-analytics/img/og.jpg">
+<meta property="og:url" content="https://yanalmaata-netizen.github.io/ava-hotel-analytics/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/ava_y.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--ink:#121212;--paper:#F6F5F0;--card:#FFFFFF;--soft:#57564F;--line:#E4E2D9;--y:#FFE600;--mute:#8A887E;--dsoft:#BDBBB1;--dcard:#1E1E1C;--dline:#33332F;color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
+img,video{max-width:100%;display:block}
+a{color:inherit}
+p{margin:0}
+h1,h2,h3{margin:0;text-wrap:balance}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+section{padding-block:clamp(72px,11vw,140px)}
+.dark{background:var(--ink);color:var(--paper)}
+.yel{background:var(--y);color:var(--ink)}
+.eyebrow{font-size:14px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);margin-bottom:18px}
+.dark .eyebrow{color:var(--y)}
+.yel .eyebrow{color:var(--ink);opacity:.7}
+h1{font-size:clamp(40px,7vw,88px);font-weight:800;line-height:1.02;letter-spacing:-.035em}
+h2{font-size:clamp(32px,5vw,60px);font-weight:800;line-height:1.05;letter-spacing:-.03em;max-width:900px}
+h3{font-size:22px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.lead{font-size:clamp(19px,2.2vw,26px);line-height:1.4;color:var(--soft);max-width:760px;margin-top:24px}
+.dark .lead{color:var(--dsoft)}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:40px}
+.btn{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:16px 28px;font-weight:700;font-size:17px;text-decoration:none;transition:transform .15s ease,opacity .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.y{background:var(--y);color:var(--ink)}
+.btn.k{background:var(--ink);color:var(--paper)}
+.btn.o{border:1.5px solid currentColor;padding:14.5px 26px}
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:rgba(18,18,18,.86);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);color:var(--paper);padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
+.top img{height:30px;width:auto}
+.top nav{display:flex;gap:22px;font-size:14px;color:var(--dsoft)}
+.top nav a{text-decoration:none}
+.top nav a:hover{color:var(--paper)}
+.top .btn{padding:8px 16px;font-size:14px}
+@media (max-width:760px){.top nav{display:none}}
+/* hero */
+.hero{padding-top:clamp(64px,9vw,120px);padding-bottom:0;overflow:hidden}
+.hero .shot{margin-top:clamp(48px,7vw,88px);border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 -1px 0 var(--dline),0 40px 120px rgba(255,230,0,.08)}
+.badge{display:inline-block;background:var(--dcard);border:1px solid var(--dline);color:var(--dsoft);border-radius:999px;padding:8px 16px;font-size:14px;margin-bottom:28px}
+.badge b{color:var(--y);font-weight:700}
+/* grids */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:56px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:56px}
+@media (max-width:900px){.grid3,.grid4{grid-template-columns:1fr 1fr}}
+@media (max-width:620px){.grid3,.grid4,.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.dark .card{background:var(--dcard)}
+.tag{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.dark .tag{color:var(--y)}
+.card p.t{font-size:17px;color:var(--soft)}
+.dark .card p.t{color:var(--dsoft)}
+/* video */
+.video{margin-top:48px;border-radius:24px;overflow:hidden;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.18)}
+.video video{width:100%;height:auto;aspect-ratio:16/10}
+.cap{font-size:15px;color:var(--mute);margin-top:16px}
+/* telegram */
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px}
+@media (max-width:860px){.tg{grid-template-columns:1fr;max-width:460px}}
+.tg figure{margin:0;display:flex;flex-direction:column;gap:16px}
+.tg .ph{background:var(--card);border-radius:22px;overflow:hidden;border:1px solid var(--line);cursor:zoom-in}
+.tg figcaption{font-size:17px;color:var(--soft)}
+.tg figcaption b{color:var(--ink)}
+/* feature rows */
+.feat{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,5vw,72px);align-items:center;padding-block:clamp(40px,6vw,72px);border-top:1px solid var(--line)}
+.feat:first-of-type{border-top:0}
+.feat.rev{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+.feat.rev .txt{order:2}
+@media (max-width:860px){.feat,.feat.rev{grid-template-columns:1fr}.feat.rev .txt{order:0}}
+.feat h3{font-size:clamp(26px,3vw,36px);font-weight:800;letter-spacing:-.025em;line-height:1.1}
+.feat ul{list-style:none;padding:0;margin:22px 0 0;display:flex;flex-direction:column;gap:12px}
+.feat li{font-size:17px;color:var(--soft);padding-left:18px;border-left:3px solid var(--y)}
+.feat .why{margin-top:22px;font-size:16px;color:var(--ink);background:var(--card);border-radius:16px;padding:16px 20px}
+.feat .pic{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;cursor:zoom-in;box-shadow:0 20px 60px rgba(18,18,18,.07)}
+.feat .pic img{width:100%;height:auto}
+/* facts */
+.fact{background:var(--ink);color:var(--paper);border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:10px}
+.fact .n{font-size:clamp(44px,5.5vw,68px);font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--y)}
+.fact p{font-size:17px;color:var(--dsoft)}
+/* steps */
+.step .n{width:48px;height:48px;border-radius:24px;background:var(--y);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+.note{margin-top:20px;background:var(--card);border-radius:18px;padding:20px 24px;font-size:17px;color:var(--soft)}
+/* who */
+.who{display:grid;grid-template-columns:1fr 1fr;gap:0 48px;margin-top:48px}
+@media (max-width:620px){.who{grid-template-columns:1fr}}
+.who p{font-size:clamp(20px,2.4vw,28px);font-weight:600;padding:18px 0;border-top:1px solid var(--dline)}
+/* contact */
+.contact{text-align:left}
+.contact img.logo{height:56px;width:auto;margin-bottom:56px}
+.phone{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.02em;margin-top:20px;user-select:all}
+footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px;border-top:1px solid var(--dline)}
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:50;background:rgba(10,10,10,.92);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));cursor:zoom-out;overflow:auto}
+.lb img{max-height:94vh;width:auto;max-width:96vw;border-radius:12px}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="top">
+<div class="wrap">
+<a href="#top" aria-label="Ava Solutions"><img src="img/ava_y.svg" alt="Ava Solutions"></a>
+<nav><a href="#video">Видео</a><a href="#telegram">Telegram</a><a href="#dashboard">Дашборд</a><a href="#result">Результат</a><a href="#start">Подключение</a></nav>
+<a class="btn y" href="demo/">Открыть демо</a>
+</div>
+</header>
+
+<section class="hero dark" id="top">
+<div class="wrap">
+<p class="badge"><b>Работает</b> в сети из трёх капсульных отелей · Алматы и Шымкент</p>
+<p class="eyebrow">Для собственников и управляющих отелей</p>
+<h1>Аналитика продаж, которая каждое утро говорит, что делать</h1>
+<p class="lead">Выручка, деньги, прогноз на 90 дней, цены конкурентов, отзывы и контроль команды. В Telegram к 07:40 и на одном дашборде.</p>
+<div class="btns">
+<a class="btn y" href="demo/">Открыть демо-версию</a>
+<a class="btn o" href="#video">Смотреть видео · 1 мин</a>
+</div>
+<div class="shot"><img src="img/money.jpg" alt="Блок «Деньги» на дашборде: за сутки, с начала месяца и прогноз со сравнениями" width="1800" height="1127"></div>
+</div>
+</section>
+
+<section id="problem">
+<div class="wrap">
+<p class="eyebrow">Как обычно</p>
+<h2 class="reveal">Собственник узнаёт о проблеме в конце месяца. Когда деньги уже потеряны.</h2>
+<div class="grid3">
+<div class="card reveal"><p class="tag">Поздно</p><h3>Отчёт раз в месяц</h3><p class="t">Пустые даты, отмены и падение цены видны, когда исправлять уже нечего.</p></div>
+<div class="card reveal"><p class="tag">Разрозненно</p><h3>Данные в пяти местах</h3><p class="t">Система бронирования, Booking, Trip.com, Островок, 2ГИС. Свести вручную – вечер в Excel.</p></div>
+<div class="card reveal"><p class="tag">На глаз</p><h3>Цена – по ощущениям</h3><p class="t">Нет ответа, когда снижать, когда поднимать и насколько. И что делают соседи.</p></div>
+</div>
+</div>
+</section>
+
+<section class="dark">
+<div class="wrap">
+<p class="eyebrow">Решение</p>
+<h2 class="reveal">Одна система – три канала. Данные собираются сами, каждое утро.</h2>
+<div class="grid3">
+<div class="card reveal"><p class="tag">07:40</p><h3>Сводка в Telegram</h3><p class="t">Три карточки: выручка, решения по цене с обоснованием, конкуренты. Минута на чтение.</p></div>
+<div class="card reveal"><p class="tag">В любой момент</p><h3>Дашборд</h3><p class="t">Деньги, прогноз, цены, отзывы, площадки, отмены, контроль. По сети и по каждому отелю.</p></div>
+<div class="card reveal"><p class="tag">Днём</p><h3>Сигналы</h3><p class="t">Пишет, только если что-то случилось: пошли отмены, гость выехал с долгом.</p></div>
+</div>
+<p class="cap" style="color:var(--mute);margin-top:28px">Источники: система бронирования (сейчас – Контур.Отель), Booking.com, Trip.com, Островок, 2ГИС. Доступ только на чтение.</p>
+</div>
+</section>
+
+<section id="video">
+<div class="wrap">
+<p class="eyebrow">Видео</p>
+<h2 class="reveal">Минута по дашборду</h2>
+<p class="lead">Главный экран, рекомендации, цены и прогноз, конкуренты, отзывы, карточка отеля.</p>
+<div class="video reveal"><video src="media/demo.mp4" poster="media/demo-poster.jpg" controls playsinline preload="metadata"></video></div>
+<p class="cap">Демо-версия. Сеть NOMAD вымышленная, суммы и названия изменены.</p>
+</div>
+</section>
+
+<section id="telegram" style="background:var(--card)">
+<div class="wrap">
+<p class="eyebrow">Утро собственника</p>
+<h2 class="reveal">Три карточки в Telegram к 07:40</h2>
+<p class="lead">Открыли телефон – уже знаете, сколько заработали вчера, что будет до конца месяца и что сделать сегодня.</p>
+<div class="tg">
+<figure class="reveal"><div class="ph"><img src="img/tg_card_c.jpg" alt="Карточка выручки по отелям" loading="lazy" width="1080" height="1380"></div><figcaption><b>Выручка.</b> Загрузка, деньги и темп к прошлому месяцу по каждому отелю.</figcaption></figure>
+<figure class="reveal"><div class="ph"><img src="img/tg_decisions_c.jpg" alt="Карточка решений по цене" loading="lazy" width="1080" height="1380"></div><figcaption><b>Решения.</b> Что сделать с ценой на какие даты, почему, отзывы и задачи на день.</figcaption></figure>
+<figure class="reveal"><div class="ph"><img src="img/tg_competitors_c.jpg" alt="Карточка конкурентов" loading="lazy" width="1080" height="1380"></div><figcaption><b>Конкуренты.</b> Цены соседей вашего формата и ваше место в общем ряду.</figcaption></figure>
+</div>
+</div>
+</section>
+
+<section id="dashboard">
+<div class="wrap">
+<p class="eyebrow">Дашборд</p>
+<h2 class="reveal">Всё, что нужно управленцу, на одном экране</h2>
+<p class="lead">Нажмите на любой скрин, чтобы увеличить. Или откройте <a href="demo/">демо-версию</a> и пощёлкайте сами.</p>
+
+<div class="feat reveal" style="margin-top:32px">
+<div class="txt"><p class="tag">Главное</p><h3>Деньги – с объяснением</h3>
+<ul><li>За сутки, с начала месяца и прогноз до конца месяца.</li><li>Каждая цифра – против среднего дня, прошлого месяца и прошлого года.</li><li>Под цифрами – вывод одной фразой.</li></ul>
+<p class="why">Собственник не считает проценты сам. Система сравнивает и пишет вывод.</p></div>
+<div class="pic"><img src="img/money.jpg" alt="Блок «Деньги»" loading="lazy" width="1800" height="1127"></div>
+</div>
+
+<div class="feat rev reveal">
+<div class="txt"><p class="tag">Деньги за сутки</p><h3>Выручка, оплаты и продажи – три разные цифры</h3>
+<ul><li>Выручка – за прожитые ночи.</li><li>Поступило – деньги, которые реально пришли.</li><li>Продано – брони, созданные за день. Это будущие деньги.</li></ul>
+<p class="why">Просадка продаж сегодня – это пустые даты через две недели.</p></div>
+<div class="pic"><img src="img/cash.jpg" alt="Вошедшие деньги и продажи за сутки" loading="lazy" width="1800" height="983"></div>
+</div>
+
+<div class="feat reveal">
+<div class="txt"><p class="tag">По отелям</p><h3>Каждый отель – одна таблица</h3>
+<ul><li>Сутки, месяц, прогноз, загрузка, цена, отмены.</li><li>Брони вперёд против обычного темпа.</li><li>Оценка гостей, долги, точность прогноза.</li></ul></div>
+<div class="pic"><img src="img/board.jpg" alt="Таблица показателей одного отеля" loading="lazy" width="1800" height="1567"></div>
+</div>
+
+<div class="feat rev reveal">
+<div class="txt"><p class="tag">Прогноз</p><h3>Загрузка на 90 дней вперёд</h3>
+<ul><li>Что уже забронировано на каждую дату.</li><li>Прогноз: темп броней плюс прошлый год.</li><li>Даты, где нужно действие, подсвечены.</li></ul>
+<p class="why">Прогноз учитывает, за сколько дней до заезда обычно бронируют в вашем отеле и сколько бывает отмен.</p></div>
+<div class="pic"><img src="img/forecast_c.jpg" alt="Загрузка на 90 дней" loading="lazy" width="1800" height="1157"></div>
+</div>
+
+<div class="feat reveal">
+<div class="txt"><p class="tag">Рекомендации</p><h3>Что сделать – с суммой в тенге</h3>
+<ul><li>Снизить или поднять цену на конкретные даты.</li><li>Отмены, паритет цен, свежие плохие отзывы.</li><li>У каждого пункта – сколько это даст денег.</li></ul>
+<p class="why">Не отчёт, а список действий. Цену меняет ваш сотрудник, шаг не больше 10%.</p></div>
+<div class="pic"><img src="img/rec_c.jpg" alt="Рекомендации с эффектом в тенге" loading="lazy" width="1800" height="1157"></div>
+</div>
+
+<div class="feat rev reveal">
+<div class="txt"><p class="tag">Рынок</p><h3>Конкуренты и цены на площадках</h3>
+<ul><li>Ваша цена на Booking, Trip.com и Островке на одни даты.</li><li>Конкуренты вашего формата, а не все подряд.</li><li>История цен соседей – видно, кто и когда снизил.</li></ul>
+<p class="why">Если Booking видит цену ниже на другой площадке, он опускает отель в поиске. Система ловит это каждое утро.</p></div>
+<div class="pic"><img src="img/comp_c.jpg" alt="Конкуренты и цены на площадках" loading="lazy" width="1800" height="1157"></div>
+</div>
+
+<div class="feat reveal">
+<div class="txt"><p class="tag">Гости</p><h3>Отзывы: на что жалуются и что хвалят</h3>
+<ul><li>Оценка за 30 дней против общей.</li><li>Темы жалоб по частоте – что чинить первым.</li><li>Каждый отзыв ниже 8 – с переводом.</li></ul></div>
+<div class="pic"><img src="img/reviews_c.jpg" alt="Отзывы по темам" loading="lazy" width="1800" height="1157"></div>
+</div>
+
+<div class="feat rev reveal">
+<div class="txt"><p class="tag">Контроль собственника</p><h3>То, что не видно в отчётах</h3>
+<ul><li>Номера «на ремонте» – сколько дней и сколько денег в сутки.</li><li>Отменённые брони с оплатой, по которым нет возврата.</li><li>Брони сильно ниже обычной цены. Выполнена ли рекомендация по цене.</li></ul>
+<p class="why">Деньги, которые теряются тихо.</p></div>
+<div class="pic"><img src="img/control.jpg" alt="Контроль собственника" loading="lazy" width="1800" height="749"></div>
+</div>
+
+<div class="btns" style="justify-content:center"><a class="btn k" href="demo/">Открыть демо-версию</a></div>
+</div>
+</section>
+
+<section class="yel" id="result">
+<div class="wrap">
+<p class="eyebrow">Первая неделя на реальной сети</p>
+<h2 class="reveal">Что система нашла за 7 дней</h2>
+<div class="grid2">
+<div class="fact reveal"><p class="n">3–10×</p><p>Отмен на Booking больше, чем в лучший месяц. Видно в тот же день, а не в конце месяца.</p></div>
+<div class="fact reveal"><p class="n">25–46%</p><p>Booking дороже Trip.com на те же даты. Риск потерять позиции в поиске.</p></div>
+<div class="fact reveal"><p class="n">7 номеров</p><p>Месяцами стоят «на ремонте». Больше 60 тысяч ₸ в сутки недополученной выручки.</p></div>
+<div class="fact reveal"><p class="n">20 броней</p><p>Отменены, оплата удержана, возврата нет. Нужна проверка, куда ушли деньги.</p></div>
+</div>
+</div>
+</section>
+
+<section id="start">
+<div class="wrap">
+<p class="eyebrow">Подключение</p>
+<h2 class="reveal">Как начать</h2>
+<div class="grid4">
+<div class="card step reveal"><div class="n">1</div><h3>Доступ</h3><p class="t">Только на чтение к системе бронирования и к Booking.</p></div>
+<div class="card step reveal"><div class="n">2</div><h3>Настройка</h3><p class="t">Несколько дней: отели, конкуренты вашего формата, площадки.</p></div>
+<div class="card step reveal"><div class="n">3</div><h3>Каждое утро</h3><p class="t">Сводка в Telegram к 07:40 и дашборд по ссылке.</p></div>
+<div class="card step reveal"><div class="n">4</div><h3>Разбор</h3><p class="t">Раз в неделю – что сработало и что поменять.</p></div>
+</div>
+<p class="note">Мы ничего не меняем в ваших системах. Личные данные гостей не храним – только суммы, даты и номера броней.</p>
+</div>
+</section>
+
+<section class="dark">
+<div class="wrap">
+<p class="eyebrow">Для кого</p>
+<h2 class="reveal">Подходит, если у вас онлайн-бронирование и важна каждая ночь</h2>
+<div class="who">
+<p>Мини-отели и апарт-отели</p><p>Капсульные отели</p>
+<p>Хостелы</p><p>Сети из нескольких объектов</p>
+<p>Бани и SPA с онлайн-записью</p><p>Управляющие компании</p>
+</div>
+</div>
+</section>
+
+<section class="dark contact" id="contact" style="border-top:1px solid var(--dline)">
+<div class="wrap">
+<img class="logo" src="img/ava_y.svg" alt="Ava Solutions">
+<p class="eyebrow">Покажу на ваших данных</p>
+<h2>Ян Ильченко</h2>
+<p class="phone">+7 705 803 20 98</p>
+<p class="lead" style="margin-top:12px">WhatsApp, Telegram. Ava Solutions – аналитика и ИИ-агенты для отелей, бань, SPA и ресторанов.</p>
+<div class="btns">
+<a class="btn y" href="https://wa.me/77058032098" target="_blank" rel="noopener">Написать в WhatsApp</a>
+<a class="btn o" href="https://t.me/yan0808" target="_blank" rel="noopener">Telegram</a>
+<a class="btn o" href="demo/">Демо-версия</a>
+</div>
+</div>
+</section>
+<footer><div class="wrap">© Ava Solutions, 2026. Демо-данные вымышленные.</div></footer>
+
+<script>
+document.querySelectorAll('.pic img,.tg .ph img').forEach(function(im){im.addEventListener('click',function(){var d=document.createElement('div');d.className='lb';d.innerHTML='<img alt="">';d.firstChild.src=im.src;d.firstChild.alt=im.alt;d.addEventListener('click',function(){d.remove()});document.addEventListener('keydown',function k(e){if(e.key==='Escape'){d.remove();document.removeEventListener('keydown',k)}});document.body.appendChild(d)})});
+if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{rootMargin:'0px 0px -8% 0px'});document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)})}else{document.querySelectorAll('.reveal').forEach(function(el){el.classList.add('in')})}
+</script>
+</body>
+</html>

@@ -1,0 +1,1061 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<meta charset="utf-8">
+<title>NOMAD – демо аналитики</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: blue brand band, sticky segmented controls, single column of white panels. AQ palette 60/30/10. */
+:root{
+  --bg:#eef3fa; --panel:#ffffff; --fg:#0b2147; --muted:#62718b; --line:#d9e2ef;
+  --brand:#0162d3; --accent-text:#0162d3; --accent-soft:#e6effb; --orange:#ff9a00; --ly:#b4b4b8;
+  --good:#1f9d55; --warn:#b86e00; --bad:#d70015; --good-soft:#e7f6ec; --warn-soft:#fff1dc; --bad-soft:#fde8ea;
+  --band:#e3ebf6; --ink2:#3d5378; --brand-3:#c5dbf7; --y-odd:#f5f8fc; --c1:#0162d3; --c2:#ff9a00; --c3:#2a9d8f; --c4:#7a5af5; --c5:#c2410c;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#070707; --panel:#17181b; --fg:#ffffff; --muted:#a0a3a8; --line:#2a2b2f;
+  --accent-text:#ff9a00; --accent-soft:#0d2340; --ly:#5c5e63;
+  --good:#30d158; --warn:#ffb340; --bad:#ff6961; --good-soft:#12301c; --warn-soft:#3a2a0e; --bad-soft:#3a1517;
+  --band:#26272b; --ink2:#b8c7e3; --brand-3:#1d3f73; --y-odd:#141a24; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#070707; --panel:#17181b; --fg:#ffffff; --muted:#a0a3a8; --line:#2a2b2f;
+  --accent-text:#ff9a00; --accent-soft:#0d2340; --ly:#5c5e63;
+  --good:#30d158; --warn:#ffb340; --bad:#ff6961; --good-soft:#12301c; --warn-soft:#3a2a0e; --bad-soft:#3a1517;
+  --band:#26272b; --ink2:#b8c7e3; --brand-3:#1d3f73; --y-odd:#141a24; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.brandbar{background:var(--brand);color:#fff;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brandbar .in{max-width:1080px;margin:0 auto;padding-block:22px 26px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:52px;height:52px;flex:none}
+.logo .wm{line-height:.9}.logo .wm b{display:block;font-size:30px;font-weight:800;letter-spacing:-.03em}.logo .wm span{font-size:15px}
+.brandbar h1{font-size:clamp(26px,4.5vw,38px);line-height:1.08;letter-spacing:-.02em;margin:14px 0 4px;font-weight:700;text-wrap:balance}
+.brandbar .meta{color:rgba(255,255,255,.82);font-size:13px}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 64px}
+nav.ctl{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:grid;gap:8px}
+.seg{display:inline-flex;gap:2px;background:var(--band);padding:3px;border-radius:12px;white-space:nowrap;max-width:100%;overflow-x:auto}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--fg);padding:7px 14px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff;font-weight:600}
+.seg.sub button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button:focus-visible,select:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+section.view{display:grid;gap:16px}
+.panel{background:var(--panel);border-radius:20px;padding:22px;min-width:0;border:1px solid var(--line)}
+h2{font-size:21px;letter-spacing:-.02em;margin:0;font-weight:700;color:var(--accent-text)}
+.sub{color:var(--muted);font-size:14px;margin:4px 0 16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--panel);border-radius:18px;padding:18px;border:1px solid var(--line)}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .d{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--muted)}
+.alert{display:flex;gap:14px;align-items:flex-start;border-radius:18px;padding:18px 20px;background:var(--bad-soft)}
+.alert.info{background:var(--accent-soft)}
+.alert .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);margin-top:7px;flex:none}
+.alert.info .dot{background:var(--brand)}
+.alert b{display:block;font-size:16px}
+.alert p{margin:4px 0 0;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:560px;height:auto}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th{font-size:12px;font-weight:600;color:var(--muted);text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px}
+.t-good{background:var(--good-soft);color:var(--good)} .t-warn{background:var(--warn-soft);color:var(--warn)} .t-bad{background:var(--bad-soft);color:var(--bad)} .t-neutral{background:var(--band);color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:4px}
+select{font:inherit;font-size:14px;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.bar{display:grid;grid-template-columns:120px 1fr 70px;gap:10px;align-items:center;font-size:14px;margin-bottom:8px}
+.bar .tr{height:10px;background:var(--band);border-radius:5px;overflow:hidden}
+.bar .tr i{display:block;height:100%;border-radius:5px;background:var(--brand)}
+.bar .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.finding{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:16px 0;border-bottom:1px solid var(--line)}
+.finding:last-child{border-bottom:0}
+.finding .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--accent-soft);color:var(--accent-text)}
+.finding b{font-size:16px}
+.finding p{margin:2px 0 0;color:var(--muted);font-size:14px;grid-column:2}
+.aq td{font-weight:600}.aq td:first-child{color:var(--accent-text)}
+.note{font-size:13px;color:var(--muted);margin-top:12px}
+.wf{display:grid;gap:10px;margin-top:6px}.wf .r{display:grid;grid-template-columns:minmax(120px,190px) 1fr minmax(92px,auto);gap:12px;align-items:center;font-size:14px}.wf .t{position:relative;height:26px;background:var(--band);border-radius:7px;overflow:hidden}.wf .t i{position:absolute;top:0;bottom:0;border-radius:7px}.wf .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+@media (max-width:560px){.wf .r{grid-template-columns:1fr auto;gap:6px 12px}.wf .t{grid-column:1/-1;order:3;height:18px}}
+.todo{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.todo>li{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:start;padding:14px 0 14px 14px;border-bottom:1px solid var(--line);position:relative}
+.todo>li:last-child{border-bottom:0}
+.todo>li::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px;background:var(--ly)}
+.todo>li.sv-bad::before{background:var(--bad)}.todo>li.sv-warn::before{background:var(--orange)}.todo>li.sv-good::before{background:var(--good)}
+.todo>li .tag{margin-top:2px;min-width:84px;text-align:center}
+.todo>li b{display:block;font-size:15px}.todo>li p{margin:3px 0 0;color:var(--muted);font-size:14px}
+@media (max-width:560px){.todo>li{grid-template-columns:1fr}.todo>li .tag{justify-self:start;min-width:0}}
+.heat{display:inline-block;min-width:46px;padding:3px 8px;border-radius:7px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums}
+table.n14 td .tag{margin-left:6px}
+.why{font-size:12px;line-height:1.35;color:var(--muted);margin-top:4px;white-space:normal;text-align:left;min-width:140px;max-width:260px}
+.d14{padding:10px 0;border-top:1px solid var(--line)}.d14.we>b{color:var(--accent-text)}
+.l14{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:6px}.l14 .pn{min-width:74px;font-size:14px}.l14 .why{margin:0;min-width:0}
+.oh{font-size:15px;color:var(--muted);font-weight:600;margin:18px 0 8px}.own>.oh:first-child{margin-top:0}
+.hcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-bottom:16px}
+.hc{background:var(--panel);border-radius:16px;padding:16px}.hc h3{margin:0 0 8px;font-size:16px}
+.hc .r{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:14px}.hc .r b.up{color:var(--good,#1a7f37)}.hc .r b.down{color:var(--bad)}
+.gobtn{margin-top:10px;padding:10px 16px;border:0;border-radius:10px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+table.n14 td{vertical-align:top}
+.orig{margin-top:4px;font-size:13px;color:var(--muted)}.orig summary{cursor:pointer}.orig p{margin:4px 0 0}
+table.n14 tr.we td:first-child{font-weight:700}
+.btn{font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--accent-text);padding:7px 14px;border-radius:10px;cursor:pointer}
+.btn:hover{background:var(--accent-soft)}.btn:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:12px}
+.srcgrid div{display:grid;gap:2px;font-size:14px}.srcgrid span{color:var(--muted);font-size:13px}
+.cal-wrap{margin-top:16px;overflow-x:auto}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(38px,1fr));gap:4px;max-width:420px;min-width:280px}
+.cal .ch{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px}
+.cd{position:relative;aspect-ratio:1.25;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;max-width:100%}
+.cd.empty{background:transparent}
+.cd i{position:absolute;top:1px;left:4px;font-style:normal;font-size:9px;font-weight:700;opacity:.85}
+.cd em,.legend em{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--panel)}
+.legend em{position:static;display:inline-block;vertical-align:middle;margin-right:6px;border:0}
+em.dn{background:var(--bad)}em.up{background:var(--good)}em.pr{background:var(--orange)}
+.legend i.sw{width:14px;height:10px;border-radius:3px}
+h3{font-size:15px;margin:22px 0 0;font-weight:700}
+ul.sub2{margin:4px 0 6px;padding-left:18px;display:grid;gap:3px}
+ul.chg{margin:6px 0 0;padding-left:18px;font-size:14px;display:grid;gap:4px}
+@media (max-width:560px){.kpi .v{font-size:22px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:14px;color:var(--muted);cursor:pointer}
+.revs{display:grid;gap:0}
+.rev{position:relative;padding:14px 0 14px 16px;border-bottom:1px solid var(--line);min-width:0}
+.rev:last-child{border-bottom:0}
+.rev::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px;background:var(--ly)}
+.rev.sv-bad::before{background:var(--bad)}.rev.sv-warn::before{background:var(--orange)}
+.rh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14px}
+.rt{font-weight:600;margin-top:6px;font-size:15px}
+.ro{margin:4px 0 0;font-size:14px;overflow-wrap:anywhere}
+.rr{margin:4px 0 0;font-size:14px;color:var(--muted);padding-left:10px;border-left:2px solid var(--line)}
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.pc{background:var(--panel);border-radius:22px;padding:22px;border-top:6px solid var(--line)}
+.pc.red{border-top-color:var(--bad)}.pc.yellow{border-top-color:var(--orange)}.pc.green{border-top-color:var(--good)}
+.pc .st{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-top:6px}
+.pc .st i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pc.red .st{color:var(--bad)}.pc.red .st i{background:var(--bad)}.pc.yellow .st{color:var(--warn)}.pc.yellow .st i{background:var(--orange)}.pc.green .st{color:var(--good)}.pc.green .st i{background:var(--good)}
+.pc h3{margin:0;font-size:20px;letter-spacing:-.02em;color:var(--accent-text)}
+.pc .big{font-size:40px;font-weight:700;letter-spacing:-.03em;margin:14px 0 2px}
+.pc .cap{color:var(--muted);font-size:14px;line-height:1.45}
+.gsep{margin:26px 4px 10px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.t5{background:var(--panel);border-radius:22px;padding:6px 22px}
+.t5 .it{display:grid;grid-template-columns:32px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
+.t5 .it:last-child{border-bottom:0}
+.t5 .n{width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.t5 b{font-weight:600;font-size:16px;display:block}.t5 .s{color:var(--muted);font-size:14px;line-height:1.45;margin-top:2px}.t5 .s ul{margin:4px 0;padding-left:18px}
+details.more{margin-top:18px}details.more>summary{cursor:pointer;list-style:none;color:var(--accent-text);font-weight:600;font-size:15px;padding:10px 4px}
+details.more>summary::-webkit-details-marker{display:none}details.more>summary::before{content:"›";display:inline-block;margin-right:8px;transition:transform .2s}details[open].more>summary::before{transform:rotate(90deg)}
+.go{cursor:pointer;transition:transform .12s,box-shadow .12s}.go:hover{box-shadow:0 6px 18px rgba(1,98,211,.14)}.go:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.periods{display:grid;grid-template-columns:1fr 1.2fr 1.2fr;gap:14px}@media (max-width:820px){.periods{grid-template-columns:1fr}}
+.per{border-radius:22px;padding:20px 22px;min-width:0}
+.per .lab{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.per .when{font-size:14px;margin-top:2px}
+.per .big{font-size:clamp(28px,3.6vw,38px);font-weight:800;letter-spacing:-.03em;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.per .cmp{font-size:14px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.pill{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px}.pill.dn{background:var(--bad-soft);color:var(--bad)}.pill.up{background:var(--good-soft);color:var(--good)}
+.per.yd{background:var(--brand);color:#fff}.per.yd .pill{background:rgba(255,255,255,.2);color:#fff}
+.per.mtd{background:var(--panel);border:2px solid var(--brand)}.per.mtd .lab{color:var(--accent-text)}
+.per.fc{background:var(--warn-soft);border:2px dashed var(--orange)}.per.fc .lab{color:var(--warn)}
+.per .split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid color-mix(in srgb,currentColor 25%,transparent)}
+.per .split div{font-size:12px;line-height:1.3;min-width:0}.per .split b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.hotels{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}@media (max-width:820px){.hotels{grid-template-columns:1fr}}
+.hcard{background:var(--panel);border-radius:22px;padding:20px;border:1px solid var(--line);min-width:0}
+.hcard .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}.hcard h3{margin:0;font-size:19px;letter-spacing:-.02em;color:var(--accent-text)}
+.stp{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}.stp.red{background:var(--bad-soft);color:var(--bad)}.stp.yel{background:var(--warn-soft);color:var(--warn)}.stp.grn{background:var(--good-soft);color:var(--good)}
+.hr{display:grid;grid-template-columns:8px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px}.hcard .hd+.hr{margin-top:10px}
+.hr i{width:8px;height:28px;border-radius:4px}.hr .k{color:var(--ink2)}.hr .k small{display:block;color:var(--muted);font-size:12px}
+.hr .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.hr .v small{display:block;font-weight:600;font-size:12px}
+.i-yd{background:var(--brand)}.i-mtd{background:var(--brand-3);box-shadow:inset 0 0 0 2px var(--brand)}.i-fc{background:var(--orange)}
+.occ7{margin-top:10px;font-size:13px;color:var(--muted)}.occ7 .b{height:10px;border-radius:5px;background:var(--band);position:relative;margin-top:6px}
+.occ7 .f{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--brand)}.occ7 .n{position:absolute;top:-4px;width:3px;height:18px;border-radius:2px;background:var(--orange)}
+.lg5{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ink2)}.lg5 span{display:inline-flex;align-items:center;gap:6px}.lg5 i{display:inline-block;width:14px;height:10px;border-radius:3px}
+.t5{display:grid}.t5 .it{display:grid;grid-template-columns:32px 1fr auto;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:start}.t5 .it:first-child{border-top:0}
+.t5 .n{width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px}
+.t5 .tg{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-text);margin-bottom:2px}
+.t5 b{font-weight:600;font-size:16px;display:block}.t5 .s{color:var(--ink2);font-size:14px;margin-top:2px}.t5 .s ul{margin:4px 0;padding-left:18px}.t5 .ar{color:var(--accent-text);font-weight:700;font-size:18px;padding-top:2px}
+.rv5{display:grid}.rv5 .it{padding:12px 0 12px 14px;border-top:1px solid var(--line);position:relative}.rv5 .it:first-child{border-top:0}
+.rv5 .it::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:2px;background:var(--orange)}.rv5 .it.bad::before{background:var(--bad)}
+.rv5 .h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;color:var(--muted)}.rv5 p{margin:4px 0 0;font-size:14px}
+.two{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}@media (max-width:820px){.two{grid-template-columns:1fr}}
+.money{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden}@media (max-width:860px){.money{grid-template-columns:1fr}}
+.mb{padding:22px;min-width:0;border-left:1px solid var(--line)}.mb:first-child{border-left:0}@media (max-width:860px){.mb{border-left:0;border-top:1px solid var(--line)}.mb:first-child{border-top:0}}
+.mb .lab{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text)}.mb.f .lab{color:var(--warn)}
+.mb .when{font-size:14px;color:var(--muted);margin-top:2px}
+.mb .big{font-size:clamp(30px,3.4vw,40px);font-weight:800;letter-spacing:-.03em;margin:8px 0 14px;font-variant-numeric:tabular-nums;line-height:1.05}
+.mb .cl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.cr{padding:8px 0;border-top:1px solid var(--line)}.cr .ct{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:baseline;font-size:14px}
+.cr .ct span{min-width:0}.cr .ct small{display:block;font-size:12px;color:var(--muted);line-height:1.3}.cr .ct b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cr .pill{min-width:52px;text-align:center}.pill.nw{background:var(--accent-soft);color:var(--accent-text)}.pill.f{background:var(--warn-soft);color:var(--warn)}
+.cb{height:8px;border-radius:4px;background:var(--band);margin-top:6px;overflow:hidden}.cb i{display:block;height:100%;border-radius:4px}
+.says{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--bg);font-size:14px;line-height:1.45}
+.mt th{text-align:right}.mt th.g{text-align:center;border-bottom:2px solid var(--line);color:var(--fg);font-size:13px}.mt th.g.f{color:var(--warn)}
+.mt td{vertical-align:middle}.mt td.s{font-weight:700}.mt td.sep,.mt th.sep{border-left:1px solid var(--line)}.mt tr.tot td{font-weight:800;background:var(--bg)}
+.money.m2{grid-template-columns:repeat(2,1fr)}@media (max-width:860px){.money.m2{grid-template-columns:1fr}}
+.hb td{vertical-align:top}.hb td:first-child{min-width:220px}
+.foot{color:var(--muted);font-size:12px;margin-top:24px}
+</style>
+
+<div style="background:#000;color:#FFE600;font:600 13px/1.4 Inter,sans-serif;padding:8px max(16px,env(safe-area-inset-left,0px));text-align:center">Демо-версия. Сеть NOMAD вымышленная, все суммы и названия изменены. Функции – как в рабочей версии. Разработка – Ava Solutions · <a href="../" style="color:#FFE600">← К презентации</a></div>
+<div class="brandbar"><div class="in">
+  <div>
+    <div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><rect x="14" y="14" width="92" height="92" rx="26" fill="#ff9a00"/><path d="M40 82V38l40 44V38" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="wm"><b>NOMAD</b><span>capsule hotels</span></div></div>
+    <h1>Аналитика продаж</h1>
+    <div class="meta" id="meta">Загружаю данные…</div>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <nav class="ctl">
+    <div class="seg" id="props"></div>
+    <div class="seg sub" id="tabs">
+      <button data-v="today" aria-pressed="true">Главное</button>
+      <button data-v="rec" aria-pressed="false">Рекомендации</button>
+      <button data-v="forecast" aria-pressed="false">Цены</button>
+      <button data-v="comp" aria-pressed="false">Конкуренты</button>
+      <button data-v="bad" aria-pressed="false">Отзывы</button>
+      <button data-v="overview" aria-pressed="false">Выручка</button>
+      <button data-v="growth" hidden>Рост выручки</button>
+      <button data-v="channels" hidden>Площадки</button>
+      <button data-v="cancel" hidden>Отмены</button>
+      <button data-v="history" hidden>История</button>
+      <button data-v="reviews" hidden>Отзывы (все)</button>
+      <button data-v="findings" hidden>Выводы</button>
+    </div>
+  </nav>
+
+  <section class="view" id="v-today"></section>
+  <section class="view" id="v-rec" hidden></section>
+  <section class="view" id="v-overview" hidden></section>
+  <section class="view" id="v-history" hidden></section>
+  <section class="view" id="v-bad" hidden></section>
+  <section class="view" id="v-channels" hidden></section>
+  <section class="view" id="v-cancel" hidden></section>
+  <section class="view" id="v-forecast" hidden></section>
+  <section class="view" id="v-growth" hidden></section>
+  <section class="view" id="v-reviews" hidden></section>
+  <section class="view" id="v-comp" hidden></section>
+  <section class="view" id="v-findings" hidden></section>
+
+  <div class="foot">Источник – отчёт управляющего Контур.Отеля по каждому объекту и групповая страница Booking.com. Площадка определяется по тарифу в Контуре. Персональные данные гостей не используются. Текущий месяц – неполный, сравнение идёт в среднем за день.</div>
+</div>
+
+<script>
+let GROWTH=null,PARITY=null,REVIEWS=null,DATA,BOOKING,COMP,FINDINGS,PACE,FC,META,CUR,PREV,PD,CI,PI,RANGE;
+const MN=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MG=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MP=['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре'];
+const MD=['январю','февралю','марту','апрелю','маю','июню','июлю','августу','сентябрю','октябрю','ноябрю','декабрю'];
+const cap=t=>t[0].toUpperCase()+t.slice(1);
+const NAMES={all:'Все объекты',abl:'Достык 12',ray:'Сейфуллина 45',shym:'Шымкент'};
+const MON=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const ml=m=>MON[+m.slice(5)-1]+' '+m.slice(2,4);
+const DAYS=m=>m===CUR?PD:new Date(+m.slice(0,4),+m.slice(5),0).getDate();
+const fmt=n=>Math.round(n).toLocaleString('ru-RU');
+const mln=n=>(n/1e6).toLocaleString('ru-RU',{minimumFractionDigits:1,maximumFractionDigits:1});
+const pct=(a,b)=>b?((a/b-1)*100):null;
+const sg=v=>v==null?'–':(v>0?'+':'')+v.toFixed(0).replace('-','−')+'%';
+const cls=v=>v==null?'flat':v>=0?'up':'down';
+const get=(p,m)=>DATA[p].months.find(x=>x.m===m);
+const ly=m=>(+m.slice(0,4)-1)+m.slice(4);
+const NS='http://www.w3.org/2000/svg';
+let PROP='all',TAB='today',COMPH=null,GIS=null,BAD=null,YDAY=null,MONEY=null,ACC=null,DEBTS=null,CTRL=null;
+
+function chart(el,{x,series,bars,barsLy,yMax,yFmt,W=720,H=260,barColor}){
+  const m={l:58,r:26,t:12,b:28},iw=W-m.l-m.r,ih=H-m.t-m.b,n=x.length,step=iw/n;
+  const X=i=>m.l+step*i+step/2,Y=v=>m.t+ih-v/yMax*ih;
+  let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="${NS}" role="img">`;
+  for(let t=0;t<=4;t++){const v=yMax*t/4,y=Y(v);s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${m.l-8}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${yFmt(v)}</text>`}
+  x.forEach((l,i)=>{if(i>0&&/^янв /.test(l)){const xx=m.l+step*i;s+=`<line x1="${xx}" x2="${xx}" y1="${m.t}" y2="${m.t+ih}" stroke="var(--ink2)" stroke-width="2"/><text x="${xx+5}" y="${m.t+11}" font-size="11" font-weight="700" fill="var(--ink2)">20${l.slice(4)}</text>`}});
+  const sk=Math.ceil(n/12);x.forEach((l,i)=>{if(i%sk===0||(i===n-1&&(n-1)%sk>=sk/2))s+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${l}</text>`});
+  if(bars){const bw=Math.min(26,step*(barsLy?.38:.62));bars.forEach((v,i)=>{if(barsLy&&barsLy[i]!=null)s+=`<rect x="${X(i)-bw-1}" y="${Y(barsLy[i])}" width="${bw}" height="${Y(0)-Y(barsLy[i])}" rx="2" fill="var(--ly)"/>`;if(v!=null)s+=`<rect x="${barsLy?X(i)+1:X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${Y(0)-Y(v)}" rx="2" fill="${barColor||(i===n-1?'var(--orange)':'var(--brand)')}"/>`})}
+  (series||[]).forEach(se=>{let d='',pen=false;se.v.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+X(i)+','+Y(v);pen=true});s+=`<path d="${d}" fill="none" stroke="${se.c}" stroke-width="${se.w||2.4}" stroke-linejoin="round" stroke-linecap="round" ${se.dash?'stroke-dasharray="5 5"':''}/>`;se.v.forEach((v,i)=>{if(v!=null&&i===se.v.length-1)s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="4.5" fill="var(--orange)"/>`})});
+  el.innerHTML=s+'</svg>';
+}
+const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v||1)));return Math.ceil(v/p*1.05)*p};
+
+/* ---------- ОБЗОР ---------- */
+function overview(){
+  const el=document.getElementById('v-overview');
+  if(PROP==='all'){
+    const rows=['abl','ray','shym'].map(p=>{const o=get(p,PREV),o0=get(p,ly(PREV)),n=get(p,CUR);return{p,o,o0,n}});
+    const tot=k=>rows.reduce((s,r)=>s+(r.o?.[k]||0),0);
+    el.innerHTML=`
+    <div class="alert"><span class="dot"></span><div><b>${RANGE}: загрузка ${rows.every(r=>r.n.occ<r.o.occ)?'ниже':'против'} ${MG[PI]} ${rows.every(r=>r.n.occ<r.o.occ)?'по всем трём объектам':''}</b><p>${rows.map(r=>`${NAMES[r.p]} ${r.n.occ.toFixed(0)}% против ${r.o.occ.toFixed(0)}% в ${MP[PI]}`).join(', ')}.</p></div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Выручка группы, ${MN[PI]}</div><div class="v">${mln(tot('sales'))} млн ₸</div><div class="d flat">3 объекта</div></div>
+      <div class="kpi"><div class="l">Номеров и мест</div><div class="v">${DATA.abl.rooms+DATA.ray.rooms+DATA.shym.rooms}</div><div class="d flat">96 · 48 · 120</div></div>
+      <div class="kpi"><div class="l">Броней создано, ${MN[PI]}</div><div class="v">${fmt(tot('cr'))}</div><div class="d flat">все каналы</div></div>
+      <div class="kpi"><div class="l">Отменено, ${MN[PI]}</div><div class="v">${fmt(tot('cx'))}</div><div class="d down">на ${mln(tot('cxs'))} млн ₸</div></div>
+    </div>
+    <div class="panel"><h2>Объекты</h2><div class="sub">${cap(MN[PI])} ${PREV.slice(0,4)} против ${MG[PI]} ${+PREV.slice(0,4)-1}. Темп ${MG[CI]} – выручка в среднем за день против ${MG[PI]}.</div>
+    <div class="tbl"><table><thead><tr><th>Объект</th><th>Номеров</th><th>Загрузка</th><th>к 2025</th><th>Средняя цена, ₸</th><th>к 2025</th><th>Выручка, млн ₸</th><th>к 2025</th><th>${cap(MN[CI])}, загрузка</th><th>${cap(MN[CI])}, выручка в день</th></tr></thead><tbody>
+    ${rows.map(r=>{const dO=r.o0?r.o.occ-r.o0.occ:null,dA=r.o0?pct(r.o.adr,r.o0.adr):null,dS=r.o0?pct(r.o.sales,r.o0.sales):null,pace=pct(r.n.sales/PD,r.o.sales/DAYS(PREV));
+      return `<tr><td>${NAMES[r.p]}</td><td>${DATA[r.p].rooms}</td><td>${r.o.occ.toFixed(0)}%</td><td class="${cls(dO)}">${dO==null?'первый месяц':(dO>0?'+':'')+dO.toFixed(0).replace('-','−')+' п.п.'}</td><td>${fmt(r.o.adr)}</td><td class="${cls(dA)}">${sg(dA)}</td><td>${mln(r.o.sales)}</td><td class="${cls(dS)}">${sg(dS)}</td><td>${r.n.occ.toFixed(0)}%</td><td><span class="tag ${pace<-10?'t-bad':pace<0?'t-warn':'t-good'}">${sg(pace)}</span></td></tr>`}).join('')}
+    </tbody></table></div></div>
+    <div class="panel"><h2>Booking.com по объектам</h2><div class="sub">Групповая страница Booking, август – октябрь 2026</div>
+    <div class="tbl"><table><thead><tr><th>Объект</th><th>Рейтинг</th><th>Отзывов</th><th>Ночей</th><th>Средняя цена, ₸</th><th>к 2025</th><th>Отмены</th></tr></thead><tbody>
+    ${['abl','ray','shym'].map(p=>{const b=BOOKING[p];return `<tr><td>${NAMES[p]}</td><td>${b.score}</td><td>${b.rev}</td><td>${fmt(b.nights)}</td><td>${fmt(b.adr)}</td><td>${b.adrd}</td><td>${b.cx}</td></tr>`}).join('')}
+    </tbody></table></div><div class="note">Ещё один объект группы на Booking – AQ capsule hotel, Достык 12: 4 ночи за три месяца. В Контуре этого объекта нет.</div></div>`;
+    return;
+  }
+  const d=DATA[PROP],ms=d.months,last=ms[ms.length-1],oct=get(PROP,PREV),oct0=get(PROP,ly(PREV)),nov0=get(PROP,ly(CUR));
+  const paceS=pct(last.sales/PD,oct.sales/DAYS(PREV)),paceC=pct(last.cr/PD,oct.cr/DAYS(PREV));
+  const k=(l,v,dv,sub)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${cls(dv)}">${sub}</div></div>`;
+  el.innerHTML=`
+  <div class="alert ${paceS<-10?'':'info'}"><span class="dot"></span><div><b>${RANGE}: загрузка ${last.occ.toFixed(0)}%, выручка в день ${sg(paceS)} к ${MD[PI]}</b><p>Новых броней в день ${(last.cr/PD).toFixed(0)} против ${(oct.cr/DAYS(PREV)).toFixed(0)} в ${MP[PI]}${nov0?` и ${(nov0.cr/DAYS(ly(CUR))).toFixed(0)} в ${MP[CI]} ${+CUR.slice(0,4)-1}`:''}. Средняя цена ${fmt(last.adr)} ₸${nov0?` против ${fmt(nov0.adr)} ₸ в ${MP[CI]} ${+CUR.slice(0,4)-1}`:''}.</p></div></div>
+  <div class="kpis">
+    ${k(`Загрузка, ${MN[PI]}`,oct.occ.toFixed(0)+'%',oct0?oct.occ-oct0.occ:null,oct0?`${(oct.occ-oct0.occ>0?'+':'')+(oct.occ-oct0.occ).toFixed(0).replace('-','−')} п.п. к прошлому году`:'первый месяц')}
+    ${k(`Средняя цена, ${MN[PI]}`,fmt(oct.adr)+' ₸',oct0?pct(oct.adr,oct0.adr):null,oct0?sg(pct(oct.adr,oct0.adr))+' к прошлому году':'первый месяц')}
+    ${k(`Выручка, ${MN[PI]}`,mln(oct.sales)+' млн ₸',oct0?pct(oct.sales,oct0.sales):null,oct0?sg(pct(oct.sales,oct0.sales))+' к прошлому году':'первый месяц')}
+    ${k(`Доход на номер, ${MN[PI]}`,fmt(oct.revpar)+' ₸',oct0?pct(oct.revpar,oct0.revpar):null,oct0?sg(pct(oct.revpar,oct0.revpar))+' к прошлому году':'первый месяц')}
+  </div>
+  <div class="panel"><h2>Выручка по месяцам</h2><div class="sub">млн ₸. Оранжевым – ${MN[CI]} ${CUR.slice(0,4)} за ${PD} дн. Серым – тот же месяц год назад.</div>
+    <div class="legend"><span><i style="background:var(--brand)"></i>месяц</span><span><i style="background:var(--ly)"></i>год назад</span></div><div class="chart" id="cSales"></div></div>
+  <div class="grid2">
+    <div class="panel"><h2>Загрузка</h2><div class="sub">% по месяцам. Пунктир – год назад.</div><div class="legend"><span><i style="background:var(--brand)"></i>текущий</span><span><i style="background:var(--ly)"></i>год назад</span></div><div class="chart" id="cOcc"></div></div>
+    <div class="panel"><h2>Средняя цена</h2><div class="sub">₸ за ночь. Пунктир – год назад.</div><div class="legend"><span><i style="background:var(--brand)"></i>текущий</span><span><i style="background:var(--ly)"></i>год назад</span></div><div class="chart" id="cAdr"></div></div>
+  </div>`;
+  const x=ms.map(o=>ml(o.m)),L=k=>ms.map(o=>{const p=get(PROP,ly(o.m));return p?p[k]:null});
+  const sales=ms.map(o=>o.sales/1e6),salesLy=L('sales').map(v=>v==null?null:v/1e6);
+  chart(document.getElementById('cSales'),{x,bars:sales,barsLy:salesLy.some(v=>v!=null)?salesLy:null,yMax:nice(Math.max(...sales,...salesLy.filter(v=>v!=null))),yFmt:v=>v.toFixed(0)});
+  chart(document.getElementById('cOcc'),{x,series:[{v:L('occ'),c:'var(--ly)',dash:true,w:2},{v:ms.map(o=>o.occ),c:'var(--brand)'}],yMax:100,yFmt:v=>v.toFixed(0)+'%',W:520});
+  const ad=ms.map(o=>o.adr),adL=L('adr');
+  chart(document.getElementById('cAdr'),{x,series:[{v:adL,c:'var(--ly)',dash:true,w:2},{v:ad,c:'var(--brand)'}],yMax:nice(Math.max(...ad,...adL.filter(v=>v!=null))),yFmt:v=>fmt(v),W:520});
+}
+
+/* ---------- ПЛОЩАДКИ ---------- */
+function channels(){
+  const el=document.getElementById('v-channels');
+  const props=PROP==='all'?['abl','ray','shym']:[PROP];
+  const months=[...new Set(props.flatMap(p=>DATA[p].months.map(o=>o.m)))].sort();
+  const cur=channels.m&&months.includes(channels.m)?channels.m:PREV;
+  const agg=m=>{const c={};props.forEach(p=>{const o=get(p,m);if(!o)return;Object.entries(o.ch).forEach(([k,v])=>{c[k]=c[k]||{s:0,b:0,x:0,n:0};['s','b','x','n'].forEach(f=>c[k][f]+=v[f])})});return c};
+  const c=agg(cur),tot=Object.values(c).reduce((s,v)=>s+v.s,0);
+  const rows=Object.entries(c).filter(([k,v])=>v.s>0||v.b>0).sort((a,b)=>b[1].s-a[1].s);
+  const cxr=v=>v.b?v.x/v.b*100:0;
+  el.innerHTML=`
+  <div class="panel"><div class="row"><h2>Площадки – ${NAMES[PROP]}</h2><select id="chM" aria-label="Месяц">${months.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${ml(m)}${m===CUR?` (1–${PD})`:''}</option>`).join('')}</select></div>
+  <div class="sub">Выручка и ночи – за проживание в месяце. Брони и отмены – созданные и отменённые в месяце. Площадка определяется по тарифу.</div>
+  <div class="tbl"><table><thead><tr><th>Площадка</th><th>Выручка, ₸</th><th>Доля</th><th>Ночей</th><th>Средняя цена, ₸</th><th>Броней</th><th>Отмен</th><th>Отмены, %</th></tr></thead><tbody>
+  ${rows.map(([k,v])=>`<tr><td>${k}</td><td>${fmt(v.s)}</td><td>${tot?(v.s/tot*100).toFixed(0):0}%</td><td>${fmt(v.n)}</td><td>${v.n?fmt(v.s/v.n):'–'}</td><td>${v.b}</td><td>${v.x}</td><td>${v.b&&v.x<=v.b?`<span class="tag ${cxr(v)>=25?'t-bad':cxr(v)>=12?'t-warn':'t-neutral'}">${cxr(v).toFixed(0)}%</span>`:'–'}</td></tr>`).join('')}
+  </tbody><tfoot><tr><td>Итого</td><td>${fmt(tot)}</td><td>100%</td><td>${fmt(rows.reduce((s,[,v])=>s+v.n,0))}</td><td></td><td>${rows.reduce((s,[,v])=>s+v.b,0)}</td><td>${rows.reduce((s,[,v])=>s+v.x,0)}</td><td></td></tr></tfoot></table></div>
+  <div class="note">«Без тарифа» – брони, у которых в Контуре не указан тариф, площадку по ним определить нельзя. «Прочие тарифы» – тарифы, названные ценой или без указания площадки.</div></div>
+  <div class="panel"><h2>Доля Booking.com в выручке</h2><div class="sub">% по месяцам</div><div class="chart" id="cBk"></div></div>`;
+  document.getElementById('chM').addEventListener('change',e=>{channels.m=e.target.value;channels()});
+  const share=months.map(m=>{const a=agg(m),t=Object.values(a).reduce((s,v)=>s+v.s,0);return t?(a['Booking.com']?.s||0)/t*100:null});
+  chart(document.getElementById('cBk'),{x:months.map(ml),series:[{v:share,c:'var(--brand)'}],yMax:100,yFmt:v=>v.toFixed(0)+'%'});
+}
+
+/* ---------- ОТМЕНЫ ---------- */
+function cancel(){
+  const el=document.getElementById('v-cancel');
+  const props=PROP==='all'?['abl','ray','shym']:[PROP];
+  const months=[...new Set(props.flatMap(p=>DATA[p].months.map(o=>o.m)))].sort().filter(m=>m>='2025-04');
+  const sum=(m,f)=>props.reduce((s,p)=>{const o=get(p,m);return s+(o?f(o):0)},0);
+  const rate=months.map(m=>{const b=sum(m,o=>o.cr);return b?sum(m,o=>o.cx)/b*100:null});
+  const bk=months.map(m=>{const b=sum(m,o=>o.ch['Booking.com']?.b||0);return b?sum(m,o=>o.ch['Booking.com']?.x||0)/b*100:null});
+  const lost=months.map(m=>sum(m,o=>o.cxs)/1e6);
+  el.innerHTML=`
+  <div class="panel"><h2>Доля отмен – ${NAMES[PROP]}</h2><div class="sub">Отменённые брони к созданным в месяце, %</div>
+  <div class="legend"><span><i style="background:var(--brand)"></i>Все каналы</span><span><i style="background:var(--orange)"></i>Booking.com</span></div><div class="chart" id="cCx"></div></div>
+  <div class="panel"><h2>Сумма отменённых броней</h2><div class="sub">млн ₸ по месяцам. ${cap(MN[CI])} – за ${PD} дн.</div><div class="chart" id="cCxS"></div></div>`;
+  const mx=Math.max(...rate.filter(v=>v!=null),...bk.filter(v=>v!=null));
+  chart(document.getElementById('cCx'),{x:months.map(ml),series:[{v:rate,c:'var(--brand)'},{v:bk,c:'var(--orange)',w:2.4}],yMax:nice(mx),yFmt:v=>v.toFixed(0)+'%'});
+  chart(document.getElementById('cCxS'),{x:months.map(ml),bars:lost,yMax:nice(Math.max(...lost)),yFmt:v=>v.toFixed(0)});
+}
+
+
+/* ---------- КОНКУРЕНТЫ ---------- */
+function raiGap(){const b=COMP.alm.bk,a=b.find(r=>r[5]&&!/сейфуллина/i.test(r[0])),r=b.find(r=>/сейфуллина/i.test(r[0]));if(!a||!r||!a[1]||!r[1])return 'Цены AQ на Booking';const d=a[1]-r[1];return d>0?`Сейфуллина на Booking дешевле Достык на ${fmt(d)} ₸ в будни`:`Сейфуллина на Booking не дешевле Достык`}
+function raiGapText(){const b=COMP.alm.bk,a=b.find(r=>r[5]&&!/сейфуллина/i.test(r[0])),r=b.find(r=>/сейфуллина/i.test(r[0]));if(!a||!r)return '';const D=META.compDates||['будни','выходные'];return `${D[0]}: ${r[1]?fmt(r[1]):'–'} ₸ против ${a[1]?fmt(a[1]):'–'} ₸${a[1]&&r[1]?', '+sg(pct(r[1],a[1])):''}. ${D[1]}: ${r[2]?fmt(r[2]):'–'} ₸ против ${a[2]?fmt(a[2]):'–'} ₸${a[2]&&r[2]?', '+sg(pct(r[2],a[2])):''}.`}
+function parityHtml(){if(!PARITY)return '';const props=PROP==='all'?['abl','ray','shym']:[PROP];const L=PARITY.labels||['Будни','Выходные'];
+ const PL=[['booking','Booking'],['ostrovok','Островок'],['trip','Trip.com']];
+ const cell=(c,bk)=>{if(!c||!c.p)return `<td class="flat">${c&&c.none?'мест нет':'–'}</td>`;const d=bk&&c!==bk?pct(c.p,bk.p):null;return `<td>${fmt(c.p)}${c.bf?' <span class="tag t-neutral">завтрак</span>':''}${d!=null&&Math.abs(d)>=1?`<div class="d flat" style="font-size:12px">${sg(d)} к Booking</div>`:''}</td>`};
+ const worst=props.map(p=>{const r=PARITY.rows[p],bk=r.booking[0].p;const o=PL.slice(1).map(([k,n])=>[n,r[k][0].p]).filter(x=>x[1]);if(!bk||!o.length)return null;const m=o.reduce((a,b)=>a[1]<b[1]?a:b);return bk>m[1]*1.05?`${NAMES[p]} – на Booking ${fmt(bk)} ₸, на ${m[0]} ${fmt(m[1])} ₸`:null}).filter(Boolean);
+ return `${worst.length?`<div class="alert"><span class="dot"></span><div><b>Booking дороже других площадок</b><p>${worst.join('. ')}. Booking видит более низкую цену на других площадках и может опускать объект в поиске. Гость, который сравнивает, бронирует там, где дешевле.</p></div></div>`:''}
+ <div class="panel"><h2>Цены AQ на площадках</h2><div class="sub">Самый дешёвый одноместный вариант на 1 гостя, за ночь, ₸, с налогами. Снято ${META.label}.</div>
+ <div class="tbl"><table><thead><tr><th>Объект</th><th>Дата</th>${PL.map(x=>`<th>${x[1]}</th>`).join('')}</tr></thead><tbody>
+ ${props.map(p=>[0,1].map(i=>{const r=PARITY.rows[p];return `<tr${i?'':' style="border-top:1px solid var(--line)"'}><td>${i?'':NAMES[p]}</td><td>${L[i]}</td>${PL.map(([k])=>cell(r[k][i],k==='booking'?null:r.booking[i])).join('')}</tr>`}).join('')).join('')}
+ </tbody></table></div>
+ <div class="note">Завтрак на Booking зависит от тарифа – в поиске он не указан. Trip.com часто даёт свою скидку («Surprise Savings»), поэтому цена там ниже, даже если в Контуре цены одинаковые. Островок по Шымкенту показывает цену заметно выше Booking – стоит проверить тарифы, переданные Островку.</div></div>`}
+function comp(){
+  const el=document.getElementById('v-comp');
+  const cities=PROP==='all'?['alm','shym']:PROP==='shym'?['shym']:['alm'];
+  const CN={alm:'Алматы',shym:'Шымкент'};
+  el.innerHTML=parityHtml()+cities.map(compTrend).join('')+
+  cities.map(c=>{const d=COMP[c];return `
+  <div class="panel"><h2>Booking.com – ${CN[c]}</h2><div class="sub">Цена за ночь для 1 гостя, ₸, со всеми налогами. Снято ${META.label}. ${c==='alm'?'Все 10 объектов в категории «Капсульные отели» и AQ.':'Самые дешёвые варианты города и одноместные номера.'}</div>
+  <div class="tbl"><table><thead><tr><th>Объект</th><th>${(META.compDates||[])[0]||'Будни'}</th><th>${(META.compDates||[])[1]||'Выходные'}</th><th style="text-align:left">Самый дешёвый вариант</th><th>Оценка · отзывов</th></tr></thead><tbody>
+  ${d.bk.map(r=>`<tr class="${r[5]?'aq':''}"><td>${r[0]}</td><td>${r[1]?fmt(r[1]):'–'}</td><td>${r[2]?fmt(r[2]):'–'}</td><td style="text-align:left;white-space:normal;min-width:220px">${r[3]}</td><td>${r[4]}</td></tr>`).join('')}
+  </tbody></table></div></div>
+  ${GIS&&GIS[c]?gisPanel(c):''}
+  <div class="grid2">
+  ${GIS&&GIS[c]?'':`<div class="panel"><h2>2ГИС – ${CN[c]}</h2><div class="sub">Цена «от», которую объект показывает в карточке 2ГИС</div>
+  <div class="tbl"><table><thead><tr><th>Объект</th><th>Цена от, ₸</th><th>Рейтинг · оценок</th></tr></thead><tbody>
+  ${d.gis.map(r=>`<tr class="${r[3]?'aq':''}"><td>${r[0]}</td><td>${fmt(r[1])}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div></div>`}
+  ${d.ost?`<div class="panel"><h2>Островок – ${CN[c]}</h2><div class="sub">Хостелы и капсульные, 1 гость, разовый срез на вт 17–18 ноября – не обновляется каждое утро. Островок показывает цены в рублях.</div>
+  <div class="tbl"><table><thead><tr><th>Объект</th><th>Цена за ночь</th></tr></thead><tbody>${d.ost.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>
+  <div class="note">В подборке хостелов Островка объектов AQ нет – они размещены там как мини-отели. Их цены – в блоке «Цены AQ на площадках» выше.</div></div>`:''}
+  </div>`}).join('');
+}
+
+
+function paceHtml(){const N={abl:'Достык 12',ray:'Сейфуллина 45',shym:'Шымкент'};const d=x=>x==null?'–':fmt(x);
+ return `<div class="panel"><h2>Booking.com – брони на будущие даты</h2><div class="sub">Pace-отчёт Booking: ночи, забронированные за последние 30 дней, по месяцу проживания. Последний успешный сбор – отчёт обновляется, когда в экстранете Booking выполнен вход.</div><div class="tbl"><table><thead><tr><th>Объект</th>${PACE[0].months?PACE[0].months.map(m=>`<th>${m}</th>`).join(''):'<th>Ноя</th><th>Дек</th><th>Янв</th><th>Фев</th>'}<th>Всего</th><th>Год назад</th><th>Средняя цена, ₸</th><th>Цена год назад, ₸</th></tr></thead><tbody>${PACE.map(r=>{const dl=r.ly?pct(r.tot,r.ly):null,da=r.lyadr?pct(r.adr,r.lyadr):null;return `<tr><td>${N[r.p]}</td>${r.m.map(v=>`<td>${v}</td>`).join('')}<td>${r.tot}</td><td class="${cls(dl)}">${r.ly?d(r.ly)+' · '+sg(dl):'–'}</td><td>${d(r.adr)}</td><td class="${cls(da)}">${r.lyadr?d(r.lyadr)+' · '+sg(da):'–'}</td></tr>`}).join('')}</tbody></table></div><div class="note">В Шымкенте гости бронируют в день заезда или накануне, поэтому броней на будущие даты мало. У Сейфуллина и Шымкента Booking не показывает сравнение с конкурентной группой – она не настроена.</div></div>`}
+
+/* ---------- ПРОГНОЗ ---------- */
+function forecast(){
+  const el=document.getElementById('v-forecast');
+  const props=PROP==='all'?['abl','ray','shym']:[PROP];
+  const ACT={'Снизить':'t-bad','Акция':'t-warn','Поднять':'t-good','Держать':'t-neutral'};
+  const dl=s=>{const d=new Date(s+'T00:00:00');return d.getDate()+' '+MON[d.getMonth()]};
+  const wd=s=>['вс','пн','вт','ср','чт','пт','сб'][new Date(s+'T00:00:00').getDay()];
+  const monthAvg=(rows,k,m)=>{const x=rows.filter(r=>r.d.startsWith(m));return x.length?x.reduce((s,r)=>s+r[k],0)/x.length:null};
+  el.innerHTML=`<div class="alert info"><span class="dot"></span><div><b>Как считается прогноз</b><p>Берём, сколько уже забронировано на каждую дату, и сколько обычно добирается за оставшиеся дни – по сроку бронирования за август–октябрь. Чем дальше дата, тем больше прогноз опирается на прошлый год. Темп – сколько забронировано сейчас против того, сколько обычно бывает за столько же дней до заезда.</p></div></div>`+
+  props.map(p=>{const f=FC[p],rows=f.rows;const ms=[...new Set(rows.map(r=>r.d.slice(0,7)))].slice(0,3);
+   const next=rows.filter(r=>r.dd>=1&&r.dd<=30);const acts=next.filter(r=>r.act!=='Держать');
+   return `<div class="panel"><h2>${NAMES[p]} – загрузка на 90 дней</h2><div class="sub">%. Столбцы – уже забронировано. Линия – прогноз. Пунктир – ${p==='ray'?'ориентир: ':''}${f.trend}.</div>
+   <div class="legend"><span><i style="background:var(--band);height:10px"></i>Забронировано</span><span><i style="background:var(--brand)"></i>Прогноз</span><span><i style="background:var(--ly)"></i>Ориентир</span></div>
+   <div class="chart" id="fc-${p}"></div>
+   <h3>Календарь на 90 дней</h3><div class="note" style="margin-top:2px">Цвет – прогноз загрузки даты. Наведите на день, чтобы увидеть, сколько уже забронировано и сколько было год назад.</div>${calendar(p)}
+   <div class="kpis" style="margin-top:12px">${ms.map(m=>{const o=monthAvg(rows,'otb',m),fc=monthAvg(rows,'fc',m),b=monthAvg(rows,'base',m);return `<div class="kpi"><div class="l">${MON[+m.slice(5)-1]} ${m.slice(0,4)}${m===META.partial?' (с '+(META.partialDays+1)+' числа)':''}</div><div class="v">${fc.toFixed(0)}%</div><div class="d ${fc<b-3?'down':'flat'}">забронировано ${o.toFixed(0)}% · ориентир ${b.toFixed(0)}%</div></div>`}).join('')}</div></div>
+   <div class="panel"><h2>${NAMES[p]} – подсказки по цене на 30 дней</h2><div class="sub">${acts.length?`Даты, где нужна реакция: ${acts.length} из 30. Остальные – держать цену.`:'На ближайшие 30 дней менять цену не требуется.'}</div>
+   ${acts.length?`<div class="tbl"><table><thead><tr><th>Дата</th><th>Забронировано</th><th>Обычно к этому дню</th><th>Темп</th><th>Прогноз</th><th>Цена в броне, ₸</th><th>Действие</th><th>Новая цена, ₸</th><th style="text-align:left">Почему</th></tr></thead><tbody>
+   ${acts.map(r=>`<tr><td>${dl(r.d)}, ${wd(r.d)}</td><td>${r.otb.toFixed(0)}%</td><td>${r.exp.toFixed(0)}%</td><td class="${cls(r.pace)}">${r.pace==null?'–':sg(r.pace)}</td><td>${r.fc.toFixed(0)}%</td><td>${r.adr?fmt(r.adr):'–'}</td><td><span class="tag ${ACT[r.act]}">${r.act}</span></td><td>${r.sug?fmt(r.sug):'–'}</td><td style="text-align:left;white-space:normal;min-width:220px">${r.why}</td></tr>`).join('')}</tbody></table></div>`:''}
+   ${p==='ray'?'<div class="note">Сейфуллина новее Достык, его цена ниже намеренно – политика заполнения нового отеля.</div>':''}
+   ${p==='shym'?'<div class="note">84% ночей в Шымкенте бронируют в день заезда. Цену здесь решают за 1–2 дня до даты, прогноз дальше опирается на прошлый год.</div>':''}</div>`}).join('')+
+  `<div class="panel"><h2>Правила подсказок</h2><div class="sub">Подсказка только рекомендует. Цену в Контуре меняет сотрудник.</div><div class="tbl"><table><thead><tr><th>Условие</th><th>Действие</th></tr></thead><tbody>
+   <tr><td>Темп ниже обычного на 30% и больше, до заезда до 30 дней</td><td><span class="tag t-bad">Снизить</span> на 10%</td></tr>
+   <tr><td>Темп ниже обычного на 30% и больше, до заезда больше 30 дней</td><td><span class="tag t-warn">Акция</span> на ранние брони или открыть каналы</td></tr>
+   <tr><td>Темп выше обычного на 25% и больше или прогноз от 92%</td><td><span class="tag t-good">Поднять</span> на 10%</td></tr>
+   <tr><td>Остальные даты</td><td><span class="tag t-neutral">Держать</span></td></tr></tbody></table></div><div class="note">Шаг – не больше 10% за раз. Срок бронирования и отмены – по броням с заездом в августе–октябре 2026. Для Сейфуллина взят срок бронирования Достык: объект открылся в октябре, своей истории мало.</div></div>`;
+  props.forEach(p=>{const rows=FC[p].rows;chart(document.getElementById('fc-'+p),{x:rows.map(r=>dl(r.d)),bars:rows.map(r=>r.otb),barColor:'var(--ly)',series:[{v:rows.map(r=>r.base),c:'var(--ly)',dash:true,w:2},{v:rows.map(r=>r.fc),c:'var(--brand)'}],yMax:100,yFmt:v=>v.toFixed(0)+'%'})});
+}
+
+
+/* ---------- РОСТ ВЫРУЧКИ ---------- */
+function growth(){
+  const el=document.getElementById('v-growth');
+  if(!GROWTH){el.innerHTML='<div class="panel">Расчёт роста выручки появится после следующего обновления данных.</div>';return}
+  const props=PROP==='all'?['abl','ray','shym']:[PROP];const G=GROWTH.props,A=GROWTH.assume;
+  const sum=k=>props.reduce((s,p)=>s+G[p][k],0);
+  const base=sum('base'),gp=sum('gPrice'),gc=sum('gCx'),tot=base+gp+gc;
+  const dl=s=>{const d=new Date(s+'T00:00:00');return d.getDate()+' '+MG[d.getMonth()]};
+  const per=dl(GROWTH.period[0])+' – '+dl(GROWTH.period[1]);
+  const mx=tot;const w=v=>(v/mx*100).toFixed(2)+'%';
+  const wf=`<div class="wf">
+   <div class="r"><span>Прогноз без изменений</span><div class="t"><i style="left:0;width:${w(base)};background:var(--brand)"></i></div><span class="n">${mln(base)} млн ₸</span></div>
+   <div class="r"><span>Цена по датам</span><div class="t"><i style="left:${w(base)};width:${w(gp)};background:var(--orange)"></i></div><span class="n up">+${mln(gp)} млн</span></div>
+   <div class="r"><span>Отмены Booking</span><div class="t"><i style="left:${w(base+gp)};width:${w(gc)};background:var(--orange)"></i></div><span class="n up">+${mln(gc)} млн</span></div>
+   <div class="r"><b>С действиями</b><div class="t"><i style="left:0;width:100%;background:var(--good)"></i></div><span class="n">${mln(tot)} млн ₸</span></div></div>`;
+  const ACT={'Снизить':'t-bad','Поднять':'t-good'};
+  const dates=props.flatMap(p=>G[p].dates.map(x=>({...x,p}))).sort((a,b)=>a.d<b.d?-1:1);
+  el.innerHTML=`<div class="kpis">
+   <div class="kpi"><div class="l">Прогноз выручки, 30 дней</div><div class="v">${mln(base)} млн ₸</div><div class="d flat">${per}</div></div>
+   <div class="kpi"><div class="l">Можно добавить</div><div class="v up">+${mln(gp+gc)} млн ₸</div><div class="d up">${sg((tot/base-1)*100)} к прогнозу</div></div>
+   <div class="kpi"><div class="l">Цена по датам</div><div class="v">+${mln(gp)} млн</div><div class="d flat">${dates.length} дат на 14 дней</div></div>
+   <div class="kpi"><div class="l">Отмены Booking</div><div class="v">+${mln(gc)} млн</div><div class="d flat">вернуть к обычному уровню</div></div></div>
+  <div class="panel"><h2>Сколько можно добавить за 30 дней</h2><div class="sub">${PROP==='all'?'Три объекта':NAMES[PROP]}. ${per}. Прогноз выручки – прогноз загрузки, умноженный на цену в бронях и ёмкость объекта.</div>${wf}</div>
+  <div class="panel"><h2>По объектам</h2><div class="sub">Выручка за 30 дней, млн ₸</div><div class="tbl"><table><thead><tr><th>Объект</th><th>Прогноз</th><th>Цена по датам</th><th>Отмены Booking</th><th>С действиями</th><th>Рост</th></tr></thead><tbody>
+   ${props.map(p=>{const g=G[p],t=g.base+g.gPrice+g.gCx;return `<tr><td>${NAMES[p]}</td><td>${mln(g.base)}</td><td class="up">+${mln(g.gPrice)}</td><td class="up">+${mln(g.gCx)}</td><td><b>${mln(t)}</b></td><td class="up">${sg((t/g.base-1)*100)}</td></tr>`}).join('')}</tbody></table></div></div>
+  <div class="panel"><h2>Прогноз выручки ${MG[CI]}</h2><div class="sub">Факт 1–${PD} ${MG[CI]} плюс прогноз на остаток месяца, без изменений цены</div><div class="tbl"><table><thead><tr><th>Объект</th><th>Факт, млн ₸</th><th>Прогноз месяца</th><th>${cap(MN[PI])}</th><th>К ${MD[PI]}</th><th>${cap(MN[CI])} ${+CUR.slice(0,4)-1}</th><th>К прошлому году</th></tr></thead><tbody>
+   ${props.map(p=>{const m=G[p].month;return `<tr><td>${NAMES[p]}</td><td>${mln(m.fact)}</td><td><b>${mln(m.fc)}</b></td><td>${m.prev?mln(m.prev):'–'}</td><td class="${cls(pct(m.fc,m.prev))}">${m.prev?sg(pct(m.fc,m.prev)):'–'}</td><td>${m.ly?mln(m.ly):'–'}</td><td class="${cls(m.ly?pct(m.fc,m.ly):null)}">${m.ly?sg(pct(m.fc,m.ly)):'нет истории'}</td></tr>`}).join('')}</tbody></table></div></div>
+  <div class="panel"><h2>Рычаг 1 – цена по датам</h2><div class="sub">Подсказки прогноза на 14 дней. Эффект – выручка даты после изменения цены минус выручка без изменения.</div>
+   ${dates.length?`<div class="tbl"><table><thead><tr><th>Дата</th><th style="text-align:left">Объект</th><th>Действие</th><th>Цена, ₸</th><th>Новая цена</th><th>Загрузка</th><th>После</th><th>Эффект, ₸</th></tr></thead><tbody>
+   ${dates.map(x=>`<tr><td>${dl(x.d)}</td><td style="text-align:left">${NAMES[x.p]}</td><td><span class="tag ${ACT[x.act]}">${x.act}</span></td><td>${fmt(x.price)}</td><td>${fmt(x.price2)}</td><td>${x.occ}%</td><td>${x.occ2}%</td><td class="up">+${fmt(x.gain)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="note">На 14 дней менять цену не требуется.</div>'}</div>
+  <div class="panel"><h2>Рычаг 2 – отмены Booking</h2><div class="sub">Доля отменённых броней Booking в этом месяце против лучшего уровня за последние полгода</div>
+   ${props.map(p=>{const g=G[p];return `<div class="bar" style="grid-template-columns:150px 1fr 150px"><span>${NAMES[p]}</span><div class="tr"><i style="width:${Math.min(100,g.cx1||0)}%;background:var(--bad)"></i></div><span class="num">${g.cx1==null?'–':g.cx1.toFixed(0)+'%'} · обычно ${g.cx0==null?'–':g.cx0.toFixed(0)+'%'}</span></div>`}).join('')}
+   <div class="note">Booking даёт ${props.map(p=>NAMES[p]+' – '+G[p].bkShare+'%').join(', ')} выручки месяца. Что снижает отмены: предоплата или невозвратный тариф со скидкой, подтверждение брони сообщением за 1–2 дня до заезда, проверка условий отмены в тарифах Booking.</div></div>
+  
+  <div class="panel"><h2>Как считается</h2><div class="note" style="margin-top:0">
+   Ёмкость объекта – сколько номеров фактически продавалось в прошлом месяце при 100% загрузки: Достык ${G.abl.cap.toFixed(0)}, Сейфуллина ${G.ray.cap.toFixed(0)}, Шымкент ${G.shym.cap.toFixed(0)}.<br>
+   Поднять цену на ${A.step*100}% – загрузка даты падает на ${(A.eUp*A.step*100).toFixed(0)}%. Снизить на ${A.step*100}% – загрузка растёт на ${(A.eDown*A.step*100).toFixed(0)}%. Это средние значения для отелей. Уточняются по факту после первых изменений цены.<br>
+   Отмены – если доля отмен Booking вернётся к обычному уровню, броней станет больше. Считаем, что половину отменённых номеров вы и так перепродаёте, поэтому в расчёт идёт только вторая половина.<br>
+   Это оценка, а не гарантия.</div></div>`;
+}
+
+
+/* ---------- ОТЗЫВЫ ---------- */
+function reviews(){
+  const el=document.getElementById('v-reviews');
+  if(!REVIEWS){el.innerHTML='<div class="panel">Отзывы появятся после следующего обновления данных.</div>';return}
+  const props=PROP==='all'?['abl','ray','shym']:[PROP];const R=REVIEWS.props;
+  const LN={en:'английский',ru:'русский',zh:'китайский',ko:'корейский',ja:'японский',tr:'турецкий',de:'немецкий',fr:'французский',it:'итальянский',es:'испанский',ar:'арабский',nl:'нидерландский',pl:'польский'};
+  const D=[['REVIEW_ADJ_SUPERB','9+'],['REVIEW_ADJ_GOOD','7–9'],['REVIEW_ADJ_AVERAGE_PASSABLE','5–7'],['REVIEW_ADJ_POOR','3–5'],['REVIEW_ADJ_VERY_POOR','1–3']];
+  const n1=v=>v.toLocaleString('ru-RU',{minimumFractionDigits:1,maximumFractionDigits:1});
+  el.innerHTML=`<div class="kpis">${props.map(p=>{const r=R[p];return `<div class="kpi"><div class="l">${NAMES[p]} · Booking</div><div class="v">${n1(r.score)}</div><div class="d flat">${fmt(r.total)} отзывов${r.avg30?` · свежие ${r.n30} – ${n1(r.avg30)}`:''}</div></div>`}).join('')}</div>`+
+  props.map(p=>{const r=R[p],all=r.dist.ALL||r.total;const cats=Object.entries(r.cat).sort((a,b)=>a[1]-b[1]);const lt=all||1;
+   return `<div class="panel"><h2>${NAMES[p]}</h2><div class="sub">Booking.com. Оценки по категориям – от слабой к сильной.</div>
+   <div class="grid2"><div>${cats.map(([k,v])=>`<div class="bar" style="grid-template-columns:150px 1fr 44px"><span>${k}</span><div class="tr"><i style="width:${Math.max(0,(v-8)/2*100)}%;background:${v<9.3?'var(--orange)':'var(--brand)'}"></i></div><span class="num">${n1(v)}</span></div>`).join('')}<div class="note" style="margin-top:4px">Шкала полос – от 8 до 10.</div></div>
+   <div><div class="tbl"><table><thead><tr><th>Оценка</th><th>Отзывов</th><th>Доля</th></tr></thead><tbody>${D.filter(([k])=>r.dist[k]).map(([k,l])=>`<tr><td>${l}</td><td>${fmt(r.dist[k])}</td><td>${(r.dist[k]/all*100).toFixed(1).replace('.',',')}%</td></tr>`).join('')}</tbody></table></div>
+   <div class="note">Язык отзывов: ${r.lang.slice(0,5).map(([k,v])=>`${LN[k]||k} ${Math.round(v/lt*100)}%`).join(', ')}.</div></div></div></div>
+   <div class="grid2"><div class="panel"><h2>Что исправить</h2><div class="sub">По свежим отзывам</div>${(r.themes.fix||[]).map((t,i)=>`<div class="finding"><span class="n">${i+1}</span><b style="font-weight:500;font-size:15px">${t}</b></div>`).join('')||'<div class="note">Жалоб в свежих отзывах нет.</div>'}</div>
+   <div class="panel"><h2>За что ценят</h2><div class="sub">Это стоит показывать в описании и рекламе</div>${(r.themes.love||[]).map((t,i)=>`<div class="finding"><span class="n" style="background:var(--good-soft);color:var(--good)">${i+1}</span><b style="font-weight:500;font-size:15px">${t}</b></div>`).join('')}</div></div>
+   ${r.low.length?`<div class="panel"><h2>${NAMES[p]} – отзывы ниже 8</h2><div class="sub">Свежие отзывы с низкой оценкой и текстом. Имена гостей не сохраняются.</div><div class="tbl"><table><thead><tr><th>Дата</th><th>Оценка</th><th style="text-align:left">Что не понравилось</th></tr></thead><tbody>${r.low.map(x=>`<tr><td>${x.d}</td><td class="down">${x.s}</td><td style="text-align:left;white-space:normal;min-width:260px">${x.neg.replace(/</g,'&lt;')}</td></tr>`).join('')}</tbody></table></div></div>`:''}`}).join('')+
+  `<div class="foot" style="margin-top:0">Отзывы с открытых страниц Booking.com, обновляются каждое утро. Темы «Что исправить» и «За что ценят» – разбор свежих отзывов на ${REVIEWS.updated?REVIEWS.updated.split('-').reverse().join('.'):''}.</div>`;
+}
+
+/* ---------- ВЫВОДЫ ---------- */
+function findings(){
+  const F=FINDINGS;
+  document.getElementById('v-findings').innerHTML=`${PROP==='shym'?'':`<div class="alert info"><span class="dot"></span><div><b>Цены внутри сети: ${raiGap()}</b><p>${raiGapText()} Сейфуллина новее и выше классом, цена ниже намеренно – политика заполнения нового отеля.</p></div></div>`}${paceHtml()}<div class="panel"><h2>Что показывают данные</h2><div class="sub">Разбор от 10 ноября 2026 по Контуру и Booking.com. Цифры в нём зафиксированы на эту дату, свежие – во вкладках «Главное» и «Обзор»</div>${F.map((f,i)=>`<div class="finding"><span class="n">${i+1}</span><b>${f[0]}</b><p>${f[1]}</p></div>`).join('')}</div>`;
+}
+
+/* ---------- Общие помощники для новых разделов ---------- */
+const MT=['январём','февралём','мартом','апрелем','маем','июнем','июлем','августом','сентябрём','октябрём','ноябрём','декабрём'];
+const MD2=['январю','февралю','марту','апрелю','маю','июню','июлю','августу','сентябрю','октябрю','ноябрю','декабрю'];
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const dl2=s=>{const d=new Date(s+'T00:00:00');return d.getDate()+' '+MON[d.getMonth()]};
+const wd2=s=>['вс','пн','вт','ср','чт','пт','сб'][new Date(s+'T00:00:00').getDay()];
+const nextD=s=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
+const pl=(n,f)=>{const a=Math.abs(n)%100,b=a%10;return f[a>10&&a<20?2:b===1?0:b>=2&&b<=4?1:2]};
+function rangesTxt(ds){ds=[...ds].sort();const g=[];ds.forEach(d=>{const l=g[g.length-1];if(l&&nextD(l[1])===d)l[1]=d;else g.push([d,d])});
+  return g.map(([a,z])=>a===z?dl2(a):(a.slice(5,7)===z.slice(5,7)?new Date(a+'T00:00:00').getDate()+'–'+dl2(z):dl2(a)+' – '+dl2(z))).join(', ')}
+const rdate=s=>{const m=String(s).match(/(\d+) (\S+) (\d{4})/);if(!m)return null;const i=MG.indexOf(m[2]);return i<0?null:new Date(+m[3],i,+m[1])};
+const PROPS=()=>PROP==='all'?['abl','ray','shym']:[PROP];
+const AQ_ALM=()=>{const b=COMP.alm.bk;return{a:b.find(r=>r[5]&&!/сейфуллина/i.test(r[0])),r:b.find(r=>/сейфуллина/i.test(r[0]))}};
+const heatBg=v=>`color-mix(in srgb, var(--brand) ${Math.max(4,Math.min(100,v)).toFixed(0)}%, var(--band))`;
+const heatFg=v=>v>=55?'#fff':'var(--fg)';
+
+/* ---------- ГЛАВНОЕ ---------- */
+function actionList(props){
+  const A=[];const AT={'Снизить':['warn','снизить цену на 10%'],'Поднять':['good','поднять цену на 10%'],'Акция':['warn','запустить акцию']};
+  const AW={'Снизить':'Почему: на эти даты продано заметно меньше, чем обычно к этому сроку.','Поднять':'Почему: на эти даты покупают быстрее обычного или почти всё уже занято.','Акция':'Почему: продано меньше обычного, но до дат больше месяца – лучше акция, чем снижение цены.'};
+  props.forEach(p=>{
+    const rows=FC[p].rows.filter(r=>r.dd>=1&&r.dd<=14&&r.act!=='Держать');const by={};rows.forEach(r=>(by[r.act]=by[r.act]||[]).push(r));
+    Object.entries(by).forEach(([a,rs])=>{const g=(GROWTH?.props?.[p]?.dates||[]).filter(x=>x.act===a&&rs.some(r=>r.d===x.d)).reduce((s,x)=>s+x.gain,0);
+      const pc=rs.filter(r=>r.pace!=null);const avg=pc.length?pc.reduce((s,r)=>s+r.pace,0)/pc.length:null;
+      A.push({sev:AT[a]?.[0]||'info',tag:'Цена',t:`${NAMES[p]}: ${AT[a]?.[1]||a} на ${rangesTxt(rs.map(r=>r.d))}`,
+        s:`${rs.length} ${pl(rs.length,['дата','даты','дат'])} в ближайшие 14 дней.${avg!=null?` Темп бронирований ${sg(avg)} к обычному.`:''}${g?` Ожидаемый эффект около +${fmt(g)} ₸.`:''} ${AW[a]||''} Цену в Контуре меняет сотрудник.`})})});
+  if(props.some(p=>p!=='shym')){const {a,r}=AQ_ALM();const D=META.compDates||['будни','выходные'];
+    /* Сейфуллина дешевле намеренно – политика заполнения нового отеля, в действия не выносим */}
+  props.forEach(p=>{const r=PARITY?.rows?.[p];if(!r)return;const bk=r.booking[0]?.p;if(!bk)return;
+    const o=[['Островок',r.ostrovok[0]?.p],['Trip.com',r.trip[0]?.p]].filter(x=>x[1]);if(!o.length)return;
+    const lo=o.reduce((x,y)=>x[1]<y[1]?x:y),hi=o.reduce((x,y)=>x[1]>y[1]?x:y);
+    if(bk>lo[1]*1.05)A.push({sev:'warn',tag:'Паритет',sh:`${NAMES[p]}: Booking ${fmt(bk)} ₸, ${lo[0]} ${fmt(lo[1])} ₸ (${sg(pct(bk,lo[1]))})`,t:`${NAMES[p]}: на Booking дороже, чем на ${lo[0]}`,s:`${fmt(bk)} против ${fmt(lo[1])} ₸, разница ${sg(pct(bk,lo[1]))}. Booking опускает объект в поиске, если видит цену ниже на других площадках.`});
+    if(hi[1]>bk*1.25)A.push({sev:'info',tag:'Паритет',t:`${NAMES[p]}: на площадке ${hi[0]} цена выше Booking на ${pct(hi[1],bk).toFixed(0)}%`,s:`${fmt(hi[1])} против ${fmt(bk)} ₸. Проверить тариф, переданный площадке, – с такой ценой брони оттуда почти не идут.`})});
+  props.forEach(p=>{const g=GROWTH?.props?.[p];if(g&&g.cx1!=null&&g.cx0!=null&&g.cx1>=15&&g.cx1>=g.cx0*2)
+    A.push({sev:'bad',tag:'Отмены',sh:`${NAMES[p]}: ${g.cx1.toFixed(0)}% против ${g.cx0.toFixed(0)}% в лучший месяц – возврат к нему даёт около +${mln(g.gCx)} млн ₸ за 30 дней`,t:`${NAMES[p]}: отменяют ${g.cx1.toFixed(0)}% броней Booking`,s:`Лучший уровень за полгода – ${g.cx0.toFixed(0)}%. Возврат к нему даёт около +${mln(g.gCx)} млн ₸ за 30 дней. Помогают предоплата или невозвратный тариф и подтверждение брони за 1–2 дня до заезда.`})});
+  const now=new Date(META.updated+'T00:00:00');
+  props.forEach(p=>{const r=REVIEWS?.props?.[p];if(!r)return;const low=BAD?.props?.[p]?(BAD.props[p].filter(x=>(now-new Date(x[0]+'T00:00:00'))/864e5<=30).map(x=>({d:x[0],s:x[1],neg:x[5]||x[4]||''}))):(r.low||[]).filter(x=>{const d=rdate(x.d);return d&&(now-d)/864e5<=30});
+    const dropped=r.avg30&&r.avg30<r.score-0.2;
+    if(low.length>=2||dropped)A.push({sev:'warn',tag:'Отзывы',t:`${NAMES[p]}: ${low.length>=2?`${low.length} ${pl(low.length,['отзыв','отзыва','отзывов'])} ниже 8 за 30 дней`:'свежие оценки ниже средней'}`,
+      s:`${r.avg30?`Средняя за 30 дней ${String(r.avg30).replace('.',',')} против ${String(r.score).replace('.',',')} в целом. `:''}${(w=>w?`Последняя жалоба: «${esc(w.neg.replace(/\s+/g,' ').slice(0,120))}${w.neg.length>120?'…':''}»`:'')(low.find(x=>x.neg))}`})});
+  props.forEach(p=>{const m=GROWTH?.props?.[p]?.month;if(!m||!m.prev)return;const d=pct(m.fc,m.prev);
+    if(d<-10)A.push({sev:'info',tag:'Месяц',sh:`${NAMES[p]}: ${mln(m.fc)} млн ₸, ${sg(d)} к ${MD2[PI]}`,t:`${NAMES[p]}: ${MN[CI]} идёт на ${mln(m.fc)} млн ₸`,s:`Это ${sg(d)} к ${MD2[PI]} (${mln(m.prev)} млн)${m.ly?` и ${sg(pct(m.fc,m.ly))} к ${MD2[CI]} ${+CUR.slice(0,4)-1}`:''}. Прогноз – факт месяца плюс ожидаемая выручка до его конца.`})});
+  const MT={'Отмены':['Отмены на Booking выше обычного','Помогают предоплата или невозвратный тариф и подтверждение брони за 1–2 дня до заезда.'],
+    'Паритет':['Цены AQ расходятся между площадками','Booking опускает объект в поиске, если видит цену ниже на других площадках.'],
+    'Отзывы':['Свежие отзывы ниже обычного','Все тексты и темы жалоб – во вкладке «Плохие отзывы».'],
+    'Месяц':[`${cap(MN[CI])} идёт ниже ${MG[PI]}`,'Прогноз – факт месяца плюс ожидаемая выручка до его конца.']};
+  const out=[];const seen={};
+  A.forEach(x=>{const k=x.tag+'|'+x.sev;const grp=MT[x.tag]&&A.filter(y=>y.tag+'|'+y.sev===k).length>1;
+    if(!grp){out.push(x);return}
+    if(seen[k]){seen[k].items.push(x);return}
+    seen[k]={sev:x.sev,tag:x.tag,t:MT[x.tag][0],items:[x],tail:MT[x.tag][1]};out.push(seen[k])});
+  out.forEach(x=>{if(x.items)x.s=`<ul class="sub2">${x.items.map(y=>`<li>${y.sh||y.t}</li>`).join('')}</ul>${x.tail}`});
+  const O={bad:0,warn:1,info:2,good:3};return out.sort((x,y)=>O[x.sev]-O[y.sev]);
+}
+function kpiToday(props){
+  const S=(f)=>props.reduce((s,p)=>s+(f(p)||0),0);
+  const cur=p=>get(p,CUR),prev=p=>get(p,PREV);
+  const sales=S(p=>cur(p)?.sales),salesP=S(p=>prev(p)?.sales);
+  const rooms=S(p=>cur(p)?DATA[p].rooms:0),occ=rooms?S(p=>cur(p)?cur(p).occ*DATA[p].rooms:0)/rooms:0;
+  const roomsP=S(p=>prev(p)?DATA[p].rooms:0),occP=roomsP?S(p=>prev(p)?prev(p).occ*DATA[p].rooms:0)/roomsP:0;
+  const fcM=S(p=>GROWTH?.props?.[p]?.month?.fc),prM=S(p=>GROWTH?.props?.[p]?.month?.prev);
+  const win=(a,b,k)=>{const R=S(p=>DATA[p].rooms);return S(p=>{const r=FC[p].rows.filter(x=>x.dd>=a&&x.dd<=b);return r.length?r.reduce((s,x)=>s+x[k],0)/r.length*DATA[p].rooms:0})/R};
+  const k=(l,v,d,dc)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${dc}">${d}</div></div>`;
+  const dS=pct(sales/PD,salesP/DAYS(PREV)),dM=pct(fcM,prM),o7=win(1,7,'otb'),e7=win(1,7,'exp'),f30=win(1,30,'fc'),b30=win(1,30,'base');
+  return `<div class="kpis">
+    ${k(`Выручка, ${RANGE}`,mln(sales)+' млн ₸',`${sg(dS)} в день к ${MD2[PI]}`,cls(dS))}
+    ${k(`Загрузка, ${RANGE}`,occ.toFixed(0)+'%',`${(occ-occP>0?'+':'')+(occ-occP).toFixed(0).replace('-','−')} п.п. к ${MD2[PI]}`,cls(occ-occP))}
+    ${k('Забронировано на 7 дней',o7.toFixed(0)+'%',`обычно к этому дню ${e7.toFixed(0)}%`,o7>=e7-3?'up':'down')}
+    ${k('Прогноз загрузки на 30 дней',f30.toFixed(0)+'%',`ориентир ${b30.toFixed(0)}%`,f30>=b30-3?'flat':'down')}
+  </div>`;
+}
+function next14(props){
+  const AC={'Снизить':['↓','t-bad'],'Поднять':['↑','t-good'],'Акция':['%','t-warn']};
+  const LBL={'Снизить':'цену −10%','Поднять':'цену +10%','Акция':'акция'};
+  const why=r=>{const o=r.otb.toFixed(0),e=r.exp.toFixed(0);
+    if(r.act==='Снизить')return `Продано ${o}%, а обычно к этому дню ${e}%. Отстаём, поэтому снижаем цену, чтобы быстрее продать.`;
+    if(r.act==='Акция')return `Продано ${o}%, а обычно к этому дню ${e}%. До даты ещё далеко – лучше запустить акцию, чем сразу снижать цену.`;
+    if(r.act==='Поднять')return r.pace!=null&&r.pace>=25?`Продано ${o}%, а обычно к этому дню ${e}%. Покупают быстрее обычного – можно продавать дороже.`:`Прогноз загрузки ${r.fc.toFixed(0)}% – номера почти все уйдут, можно продавать дороже.`;
+    return '';};
+  const chip=r=>AC[r.act]?`<span class="tag ${AC[r.act][1]}">${AC[r.act][0]} ${LBL[r.act]}${r.sug?' → '+fmt(r.sug)+' ₸':''}</span>`:'';
+  const cell=r=>r?`<td><span class="heat" style="background:${heatBg(r.otb)};color:${heatFg(r.otb)}">${r.otb.toFixed(0)}%</span>${chip(r)}${AC[r.act]?`<div class="why">${why(r)}</div>`:''}</td>`:'<td>–</td>';
+  const dates=FC[props[0]].rows.filter(r=>r.dd>=0&&r.dd<=13).map(r=>r.d);
+  const we=d=>{const w=new Date(d+'T00:00:00').getDay();return w===5||w===6};
+  const SN={abl:'Достык',ray:'Сейфуллина',shym:'Шымкент'};
+  const word=r=>r.act==='Снизить'?'цену −10%':r.act==='Поднять'?'цену +10%':'акция';
+  const line=(p,r)=>{if(!r)return '';const a=AC[r.act];
+    return `<div class="l14"><span class="pn">${SN[p]||NAMES[p]}</span><span class="heat" style="background:${heatBg(r.otb)};color:${heatFg(r.otb)}">${r.otb.toFixed(0)}%</span>${a?`<span class="tag ${a[1]}">${a[0]} ${word(r)}${r.sug?' → '+fmt(r.sug)+' ₸':''}</span><span class="why">${r.act==='Поднять'&&!(r.pace!=null&&r.pace>=25)?'почти всё занято':'обычно '+r.exp.toFixed(0)+'%'}</span>`:'<span class="flat">цену не менять</span>'}</div>`};
+  if(props.length>1)return `<div class="panel"><h2>Что с ценой в ближайшие 14 дней</h2><div class="sub">Число – сколько номеров уже продано. «Обычно» – сколько к этому дню продаётся обычно. Продано меньше обычного – снижаем цену, больше – повышаем.</div>
+    ${dates.map(d=>`<div class="d14${we(d)?' we':''}"><b>${dl2(d)}, ${wd2(d)}</b>${d===META.updated?' <span class="tag t-neutral">сегодня</span>':''}${props.map(p=>line(p,FC[p].rows.find(r=>r.d===d))).join('')}</div>`).join('')}
+    <div class="note">Цену в Контуре меняет сотрудник.</div></div>`;
+  const p=props[0],rows=FC[p].rows.filter(r=>r.dd>=0&&r.dd<=13);
+  return `<div class="panel"><h2>${NAMES[p]} – ближайшие 14 дней</h2><div class="sub">Забронировано сейчас против обычного темпа и прошлого года</div>
+    <div class="tbl"><table class="n14"><thead><tr><th>Дата</th><th>Забронировано</th><th>Обычно к этому дню</th><th>Темп</th>${p==='ray'?'':'<th>Год назад</th>'}<th>Прогноз</th><th>Цена в броне, ₸</th><th>Что с ценой и почему</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr${we(r.d)?' class="we"':''}><td>${dl2(r.d)}, ${wd2(r.d)}</td><td><span class="heat" style="background:${heatBg(r.otb)};color:${heatFg(r.otb)}">${r.otb.toFixed(0)}%</span></td><td>${r.exp.toFixed(0)}%</td><td class="${cls(r.pace)}">${r.pace==null?'–':sg(r.pace)}</td>${p==='ray'?'':`<td>${r.ly?r.ly.toFixed(0)+'%':'–'}</td>`}<td>${r.fc.toFixed(0)}%</td><td>${r.adr?fmt(r.adr):'–'}</td><td>${AC[r.act]?chip(r)+`<div class="why">${why(r)}</div>`:'<span class="flat">держать</span>'}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+function ownerView(props){
+  const S=f=>props.reduce((s,p)=>s+(f(p)||0),0);
+  const cur=p=>get(p,CUR),prev=p=>get(p,PREV);
+  const sales=S(p=>cur(p)?.sales),salesP=S(p=>prev(p)?.sales);
+  const nights=S(p=>cur(p)?cur(p).occ/100*DATA[p].rooms*PD:0);
+  const rooms=S(p=>cur(p)?DATA[p].rooms:0),occ=rooms?S(p=>cur(p)?cur(p).occ*DATA[p].rooms:0)/rooms:0;
+  const roomsP=S(p=>prev(p)?DATA[p].rooms:0),occP=roomsP?S(p=>prev(p)?prev(p).occ*DATA[p].rooms:0)/roomsP:0;
+  const fcM=S(p=>GROWTH?.props?.[p]?.month?.fc),prM=S(p=>GROWTH?.props?.[p]?.month?.prev);
+  const dS=pct(sales/PD,salesP/DAYS(PREV)),dM=pct(fcM,prM);
+  const cr=S(p=>cur(p)?.cr),cx=S(p=>cur(p)?.cx),cxs=S(p=>cur(p)?.cxs),crP=S(p=>prev(p)?.cr),cxP=S(p=>prev(p)?.cx);
+  const rate=cr?cx/cr*100:0,rateP=crP?cxP/crP*100:0;
+  const now=new Date(META.updated+'T00:00:00');
+  const bad30=p=>BAD?.props?.[p]?BAD.props[p].filter(r=>(now-new Date(r[0]+'T00:00:00'))/864e5<=30).length:null;
+  const k=(l,v,d,dc)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${dc||'flat'}">${d}</div></div>`;
+  const sc=v=>String(v).replace('.',',');
+  const head=t=>`<h2 class="oh">${t}</h2>`;
+  const money=`${head('Деньги')}<div class="kpis">
+    ${k(`Выручка, ${RANGE}`,mln(sales)+' млн ₸',`${sg(dS)} в день к ${MD2[PI]}`,cls(dS))}
+    ${GROWTH?k(`Прогноз на весь ${MN[CI]}`,mln(fcM)+' млн ₸',`${sg(dM)} к ${MD2[PI]}`,cls(dM)):''}
+    ${k('Загрузка',occ.toFixed(0)+'%',`${(occ-occP>0?'+':'')+(occ-occP).toFixed(0).replace('-','−')} п.п. к ${MD2[PI]}`,cls(occ-occP))}
+    ${k('Средняя цена за ночь',nights?fmt(Math.round(sales/nights))+' ₸':'–','за '+RANGE)}
+  </div>`;
+  const canc=`${head('Отмены')}<div class="kpis">
+    ${k('Доля отмен',cx===0?'0':rate.toFixed(0)+'%',cx===0?'отмен нет':`${cx} из ${cr} броней, в ${MD2[PI]} было ${rateP.toFixed(0)}%`,cx===0?'up':rate>rateP+3?'down':rate<rateP-3?'up':'flat')}
+    ${k('Потеряно на отменах',mln(cxs)+' млн ₸',cx===0?'0':'сумма отменённых броней','flat')}
+  </div>`;
+  const rev=`${head('Отзывы на Booking')}<div class="kpis">${props.map(p=>{const r=REVIEWS?.props?.[p];if(!r)return '';const b=bad30(p);
+    return k(NAMES[p],sc(r.score),`за 30 дней ${r.avg30?sc(r.avg30):'–'}${b==null?'':b===0?', плохих отзывов нет':`, плохих (ниже 8) – ${b}`}`,r.avg30&&r.avg30<r.score-0.4||b>=3?'down':'up')}).join('')}</div>`;
+  const cards=props.length>1?`<div class="hcs">${props.map(p=>{const c=cur(p),pv=prev(p),r=REVIEWS?.props?.[p];if(!c)return '';
+    const d=pct(c.sales/PD,pv?pv.sales/DAYS(PREV):0),cp=c.cr?c.cx/c.cr*100:0,b=bad30(p);
+    const row=(l,v,cl)=>`<div class="r"><span>${l}</span><b class="${cl||''}">${v}</b></div>`;
+    return `<div class="hc"><h3>${NAMES[p]}</h3>${row('Выручка',mln(c.sales)+' млн ₸')}${row('К '+MD2[PI]+', в день',sg(d),cls(d))}${GROWTH?.props?.[p]?.month?row('Прогноз на '+MN[CI],mln(GROWTH.props[p].month.fc)+' млн ₸'):''}${row('Загрузка',c.occ.toFixed(0)+'%')}${row('Средняя цена за ночь',fmt(c.adr)+' ₸')}${row('Отмены',c.cx===0?'0':c.cx+' ('+cp.toFixed(0)+'%)',c.cx===0?'up':cp>25?'down':'')}${row('Рейтинг Booking',r?sc(r.score):'–')}${row('Плохих отзывов за 30 дней',b==null?'–':b,b>=3?'down':'')}</div>`}).join('')}</div>`:'';
+  return props.length>1?`${cards}<h2 class="oh" style="margin:6px 4px 8px">Итого по всем отелям</h2><div class="panel own">${money}${canc}</div>`:`<div class="panel own">${money}${canc}${rev}</div>`;
+}
+function ydayPanel(props){
+  if(!YDAY||!YDAY.props)return '';const d=new Date(YDAY.d+'T00:00:00');
+  const ps=props.filter(p=>YDAY.props[p]);if(!ps.length)return '';
+  const row=(n,r,b)=>`<tr${b?' style="font-weight:700"':''}><td>${n}</td><td>${fmt(r.sales)}</td><td>${(+r.occ).toFixed(0)}%</td><td>${r.adr?fmt(r.adr):'–'}</td></tr>`;
+  const tot=ps.length>1?row('Итого',YDAY.total,true):'';
+  return `<div class="panel"><h2>За сутки, ${d.getDate()} ${MG[d.getMonth()]}</h2><div class="sub">Вчерашний день по Контуру: выручка за проживание, загрузка и средняя цена за ночь</div>
+  <div class="tbl"><table><thead><tr><th>Объект</th><th>Выручка, ₸</th><th>Загрузка</th><th>Средняя цена, ₸</th></tr></thead><tbody>${ps.map(p=>row(NAMES[p],YDAY.props[p])).join('')}${tot}</tbody></table></div></div>`;
+}
+function go(tab,p){if(p)PROP=p;TAB=tab;try{history.replaceState(null,'','#'+tab)}catch(_){location.hash=tab}render();window.scrollTo({top:0})}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g||e.target.closest('a,button,select,input,summary'))return;go(g.dataset.go,g.dataset.p)});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-go]')){e.preventDefault();go(e.target.dataset.go,e.target.dataset.p)}});
+const tth=v=>v>=1e6?mln(v)+' млн':fmt(v/1000)+' тыс';
+const SN2={abl:'Достык',ray:'Сейфуллина',shym:'Шымкент'};
+const pill=v=>v==null?'':`<span class="pill ${v<0?'dn':'up'}">`;
+function periodsBand(props){
+  const S=(ps,f)=>ps.reduce((t,p)=>t+(f(p)||0),0);
+  const lyPs=props.filter(p=>get(p,ly(CUR)));const part=lyPs.length&&lyPs.length<props.length;
+  const who=part?lyPs.map(p=>SN2[p]).join(' и '):'';
+  const mtdD=ps=>S(ps,p=>get(p,CUR)?.sales)/PD, prvD=ps=>S(ps,p=>get(p,PREV)?.sales)/DAYS(PREV), lyD=ps=>S(ps,p=>get(p,ly(CUR))?.sales)/DAYS(ly(CUR));
+  const fcS=ps=>S(ps,p=>GROWTH?.props?.[p]?.month?.fc);
+  let M=v=>fmt(v)+' ₸';const MM=v=>mln(v)+' млн ₸';
+  const P=(v,c)=>v==null?'':`<span class="pill ${c||(v<0?'dn':'up')}">${sg(v)}</span>`;
+  const word=v=>Math.abs(v)<0.5?'на уровне':(v<0?'на '+Math.abs(v).toFixed(0)+'% ниже':'на '+v.toFixed(0)+'% выше');
+  const block=(cls,lab,when,now,rows,says)=>{const mx=Math.max(now.v,...rows.map(r=>r.bar??r.v));
+    const bar=(v,c)=>`<div class="cb"><i style="width:${(v/mx*100).toFixed(1)}%;background:${c}"></i></div>`;
+    return `<div class="mb ${cls}"><div class="lab">${lab}</div><div class="when">${when}</div><div class="big">${M(now.v)}</div>
+     <div class="cl">С чем сравниваем</div>
+     <div class="cr"><div class="ct"><span>${now.l}</span><b>${M(now.v)}</b><span class="pill ${cls==='f'?'f':'nw'}">сейчас</span></div>${bar(now.v,cls==='f'?'var(--orange)':'var(--brand)')}</div>
+     ${rows.map(r=>`<div class="cr"><div class="ct"><span>${r.l}${r.sub?`<small>${r.sub}</small>`:''}</span><b>${M(r.bar??r.v)}</b>${P(r.d)}</div>${bar(r.bar??r.v,r.c)}</div>`).join('')}
+     <div class="says">${says}</div></div>`};
+  const out=[];
+  if(YDAY&&YDAY.props&&props.every(p=>YDAY.props[p])){const d=new Date(YDAY.d+'T00:00:00');const yv=ps=>S(ps,p=>YDAY.props[p].sales);
+    const y=yv(props),rows=[{l:`Средний день ${MG[CI]}`,sub:`${RANGE}, ${mln(S(props,p=>get(p,CUR)?.sales)).replace(/$/,' млн ₸')} за ${PD} ${pl(PD,['день','дня','дней'])}`,v:mtdD(props),d:pct(y,mtdD(props)),c:'var(--brand-3)'},
+      {l:`Средний день ${MG[PI]}`,sub:`${mln(S(props,p=>get(p,PREV)?.sales))} млн ₸ за ${DAYS(PREV)} дней`,v:prvD(props),d:pct(y,prvD(props)),c:'var(--brand-3)'}];
+    if(lyPs.length)rows.push({l:`Средний день ${MG[CI]} ${+CUR.slice(0,4)-1}`,sub:part?`только ${who} – у них вчера ${fmt(yv(lyPs))} ₸`:'',v:lyD(lyPs),d:pct(yv(lyPs),lyD(lyPs)),c:'var(--ly)'});
+    out.push(block('y','За сутки',`вчера, ${['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'][d.getDay()]} ${d.getDate()} ${MG[d.getMonth()]}`,{l:'Вчера',v:y},rows,
+      `Вчера заработали ${fmt(y)} ₸ – ${word(rows[0].d)} среднего дня ${MG[CI]} и ${word(rows[1].d)} среднего дня ${MG[PI]}${lyPs.length?`; ${part?who+' – ':''}${word(rows[2].d)} среднего дня ${MG[CI]} прошлого года`:''}.`))}
+  M=MM;
+  {const m=S(props,p=>get(p,CUR)?.sales),rows=[{l:`${cap(MN[PI])}, те же ${PD} ${pl(PD,['день','дня','дней'])}`,sub:`по среднему дню ${MG[PI]} – ${fmt(prvD(props))} ₸`,v:prvD(props)*PD,d:pct(m,prvD(props)*PD),c:'var(--brand-3)'}];
+    if(lyPs.length)rows.push({l:`${cap(MN[CI])} ${+CUR.slice(0,4)-1}, ${PD} ${pl(PD,['день','дня','дней'])}`,sub:`${part?`только ${who} – у них сейчас ${M(mtdD(lyPs)*PD)}; `:''}по среднему дню – ${fmt(lyD(lyPs))} ₸`,v:lyD(lyPs)*PD,d:pct(mtdD(lyPs),lyD(lyPs)),c:'var(--ly)'});
+    out.push(block('m',`С 1 ${MG[CI]}`,`${RANGE} · отработано ${PD} ${pl(PD,['день','дня','дней'])}`,{l:RANGE,v:m},rows,
+      `За ${PD} ${pl(PD,['день','дня','дней'])} – ${M(m)}, в среднем ${fmt(m/PD)} ₸ в день. Это ${word(rows[0].d)}, чем в ${MP[PI]}${lyPs.length?`, и ${word(rows[1].d)}, чем в ${MP[CI]} прошлого года${part?' ('+who+')':''}`:''}.`))}
+  if(GROWTH&&props.every(p=>GROWTH.props?.[p]?.month)){const f=fcS(props),pv=S(props,p=>get(p,PREV)?.sales),rows=[{l:`${cap(MN[PI])} целиком`,sub:`${DAYS(PREV)} дней, факт`,v:pv,d:pct(f,pv),c:'var(--brand-3)'}];
+    if(lyPs.length){const l=S(lyPs,p=>get(p,ly(CUR))?.sales);rows.push({l:`${cap(MN[CI])} ${+CUR.slice(0,4)-1} целиком`,sub:part?`только ${who} – у них прогноз ${M(fcS(lyPs))}`:'факт прошлого года',v:l,d:pct(fcS(lyPs),l),c:'var(--ly)'})}
+    out.push(block('f',`Прогноз на ${MN[CI]}`,`факт ${PD} ${pl(PD,['дня','дней','дней'])} + ожидание до конца месяца`,{l:`Прогноз ${MG[CI]}`,v:f},rows,
+      `Ожидаем ${M(f)} за ${MN[CI]} – ${word(rows[0].d)}, чем в ${MP[PI]}${lyPs.length?`, и ${word(rows[1].d)}, чем в ${MP[CI]} прошлого года${part?' ('+who+')':''}`:''}. Осталось заработать ${M(f-S(props,p=>get(p,CUR)?.sales))}.`))}
+  return `<h2 style="margin:4px 4px 0">Деньги${props.length>1?' – все отели':' – '+NAMES[props[0]]}</h2><div class="money">${out.join('')}</div>${cashBand(props)}`;
+}
+function cashBand(props){
+  if(!MONEY||!props.every(p=>MONEY.props?.[p]))return '';const X=MONEY,D=X.days,d=new Date(X.d+'T00:00:00');
+  const S=(ps,f)=>ps.reduce((t,p)=>t+(f(X.props[p])||0),0);const MM=v=>fmt(v)+' ₸';
+  const P=v=>v==null?'':`<span class="pill ${v<0?'dn':'up'}">${sg(v)}</span>`;
+  const word=v=>Math.abs(v)<0.5?'на уровне':(v<0?'на '+Math.abs(v).toFixed(0)+'% ниже':'на '+v.toFixed(0)+'% выше');
+  const lyY=+X.lyM.slice(0,4);
+  const block=(cls,lab,when,big,sub,now,rows,says)=>{const mx=Math.max(now,...rows.map(r=>r.v));const bar=(v,c)=>`<div class="cb"><i style="width:${(v/mx*100).toFixed(1)}%;background:${c}"></i></div>`;
+    return `<div class="mb ${cls}"><div class="lab">${lab}</div><div class="when">${when}</div><div class="big">${MM(big)}</div>${sub?`<div class="when" style="margin:-8px 0 14px">${sub}</div>`:''}
+     <div class="cl">С чем сравниваем</div><div class="cr"><div class="ct"><span>Вчера</span><b>${MM(now)}</b><span class="pill nw">сейчас</span></div>${bar(now,'var(--brand)')}</div>
+     ${rows.map(r=>`<div class="cr"><div class="ct"><span>${r.l}${r.sub?`<small>${r.sub}</small>`:''}</span><b>${MM(r.v)}</b>${P(r.d)}</div>${bar(r.v,r.c)}</div>`).join('')}<div class="says">${says}</div></div>`};
+  const mk=(key,lab,hint,sub)=>{const g=o=>key==='pay'?o:o&&o.s;const y=S(props,x=>g(x[key].d)),m=S(props,x=>g(x[key].mtd))/D,pv=S(props,x=>g(x[key].prev))/X.prevDays;
+    const lyPs=props.filter(p=>X.props[p][key].ly),part=lyPs.length&&lyPs.length<props.length,who=lyPs.map(p=>SN2[p]).join(' и ');
+    const rows=[{l:`Средний день ${MG[CI]}`,sub:`${RANGE}, ${mln(m*D)} млн ₸`,v:m,d:pct(y,m),c:'var(--brand-3)'},{l:`Средний день ${MG[PI]}`,sub:`${mln(pv*X.prevDays)} млн ₸ за ${X.prevDays} дней`,v:pv,d:pct(y,pv),c:'var(--brand-3)'}];
+    if(lyPs.length){const yl=S(lyPs,x=>g(x[key].d)),l=S(lyPs,x=>g(x[key].ly))/X.lyDays;rows.push({l:`Средний день ${MG[CI]} ${lyY}`,sub:part?`только ${who} – у них вчера ${fmt(yl)} ₸`:'',v:l,d:pct(yl,l),c:'var(--ly)'})}
+    return block('',lab,hint,y,sub?sub(y):'',y,rows,`${key==='pay'?'Вчера поступило':'Вчера продали брони на'} ${fmt(y)} ₸ – ${word(rows[0].d)} среднего дня ${MG[CI]} и ${word(rows[1].d)} среднего дня ${MG[PI]}${lyPs.length?`; ${part?who+' – ':''}${word(rows[2].d)} среднего дня ${MG[CI]} прошлого года`:''}.`)};
+  const n=S(props,x=>x.sold.d.n),xn=S(props,x=>x.sold.d.xn);
+  const dd=`вчера, ${d.getDate()} ${MG[d.getMonth()]}`;
+  const tbl=false?`<div class="panel" style="margin-top:14px"><h2>За сутки по отелям, ${d.getDate()} ${MG[d.getMonth()]}</h2><div class="sub">Выручка – за прожитые ночи. Поступило – деньги, которые пришли. Продано – брони, созданные за день, на любые даты.</div>
+   <div class="tbl"><table class="mt"><thead><tr><th style="text-align:left">Отель</th><th class="sep">Выручка, ₸</th><th class="sep">Поступило, ₸</th><th>к среднему дню</th><th class="sep">Продано, ₸</th><th>броней</th><th>к среднему дню</th></tr></thead><tbody>
+   ${[...props.map(p=>[NAMES[p],[p],'']),['Все отели',props,'tot']].map(([nm,ps,c])=>{const Q=f=>ps.reduce((t,p)=>t+f(X.props[p]),0);const pay=Q(x=>x.pay.d),pm=Q(x=>x.pay.mtd)/D,so=Q(x=>x.sold.d.s),sm=Q(x=>x.sold.mtd.s)/D,nn=Q(x=>x.sold.d.n),xx=Q(x=>x.sold.d.xn);const rv=YDAY?.props?ps.reduce((t,p)=>t+(YDAY.props[p]?.sales||0),0):null;
+     return `<tr class="${c}"><td>${nm}</td><td class="s sep">${rv!=null?fmt(rv):'–'}</td><td class="s sep">${fmt(pay)}</td><td>${P(pct(pay,pm))}</td><td class="s sep">${fmt(so)}</td><td>${nn}${xx?` <span class="flat">· ${xx} отм.</span>`:''}</td><td>${P(pct(so,sm))}</td></tr>`}).join('')}</tbody></table></div>
+   <div class="note">«К среднему дню» – вчера против среднего дня ${MG[CI]}. Отм. – брони, созданные вчера и уже отменённые.</div></div>`:'';
+  return `<h2 style="margin:18px 4px 0">Вошедшие деньги и продажи за сутки</h2><div class="money m2">
+   ${mk('pay','Поступило денег',dd+' · наличные, карты, переводы, площадки')}
+   ${mk('sold','Продано за сутки',dd+' · новые брони на любые даты',()=>`${n} ${pl(n,['бронь','брони','броней'])}${xn?`, из них ${xn} уже ${pl(xn,['отменена','отменены','отменены'])}`:''}`)}</div>${tbl}`;
+}
+function hotelBoards(props){
+  const X=MONEY&&MONEY.props?MONEY:null;const lyY=+CUR.slice(0,4)-1;
+  const P=v=>v==null||!isFinite(v)?'<span class="flat">–</span>':`<span class="pill ${v<0?'dn':'up'}">${sg(v)}</span>`;
+  const PP=v=>v==null?'<span class="flat">–</span>':`<span class="pill ${v<0?'dn':'up'}">${(v>0?'+':'')+v.toFixed(0).replace('-','−')} п.п.</span>`;
+  const PX=v=>v==null?'<span class="flat">–</span>':`<span class="pill ${v>0?'dn':'up'}">${(v>0?'+':'')+v.toFixed(0).replace('-','−')} п.п.</span>`;
+  const r=(k,sub,v,a,b,c,cls)=>`<tr class="${cls||''}"><td><b>${k}</b>${sub?`<div class="flat" style="font-size:12px;white-space:normal">${sub}</div>`:''}</td><td class="s sep">${v}</td><td>${a}</td><td>${b}</td><td>${c}</td></tr>`;
+  const grp=t=>`<tr><td colspan="5" style="padding-top:16px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-text)">${t}</td></tr>`;
+  return props.map(p=>{const c=get(p,CUR),pv=get(p,PREV),l=get(p,ly(CUR));if(!c)return '';
+    const DP=DAYS(PREV),DL=DAYS(ly(CUR)),y=YDAY?.props?.[p],mo=X?.props?.[p],m=GROWTH?.props?.[p]?.month,rv=REVIEWS?.props?.[p];
+    const pd=v=>v/PD;let h='';
+    h+=grp(`За сутки – ${(d=>d.getDate()+' '+MG[d.getMonth()])(new Date((YDAY?.d||X?.d)+'T00:00:00'))}`);
+    if(y)h+=r('Выручка','за прожитые ночи',fmt(y.sales)+' ₸',P(pct(y.sales,pd(c.sales))),P(pv&&pct(y.sales,pv.sales/DP)),P(l&&pct(y.sales,l.sales/DL)));
+    if(mo){h+=r('Поступило денег','наличные, карты, переводы, площадки',fmt(mo.pay.d)+' ₸',P(pct(mo.pay.d,mo.pay.mtd/X.days)),P(mo.pay.prev&&pct(mo.pay.d,mo.pay.prev/X.prevDays)),P(mo.pay.ly&&pct(mo.pay.d,mo.pay.ly/X.lyDays)));
+      const so=mo.sold;h+=r('Продано броней',`${so.d.n} ${pl(so.d.n,['бронь','брони','броней'])} на любые даты${so.d.xn?`, ${so.d.xn} уже ${pl(so.d.xn,['отменена','отменены','отменены'])}`:''}`,fmt(so.d.s)+' ₸',P(pct(so.d.s,so.mtd.s/X.days)),P(so.prev&&pct(so.d.s,so.prev.s/X.prevDays)),P(so.ly&&pct(so.d.s,so.ly.s/X.lyDays)))}
+    if(y)h+=r('Загрузка','',(+y.occ).toFixed(0)+'%',PP(y.occ-c.occ),PP(pv&&y.occ-pv.occ),PP(l&&y.occ-l.occ));
+    h+=grp(`С 1 ${MG[CI]} – ${PD} ${pl(PD,['день','дня','дней'])}, сравнение в среднем за день`);
+    h+=r('Выручка',`${fmt(pd(c.sales))} ₸ в день`,mln(c.sales)+' млн ₸','',P(pv&&pct(pd(c.sales),pv.sales/DP)),P(l&&pct(pd(c.sales),l.sales/DL)));
+    if(mo){h+=r('Поступило денег',`${fmt(mo.pay.mtd/X.days)} ₸ в день`,mln(mo.pay.mtd)+' млн ₸','',P(mo.pay.prev&&pct(mo.pay.mtd/X.days,mo.pay.prev/X.prevDays)),P(mo.pay.ly&&pct(mo.pay.mtd/X.days,mo.pay.ly/X.lyDays)));
+      const so=mo.sold;h+=r('Продано броней',`${so.mtd.n} ${pl(so.mtd.n,['бронь','брони','броней'])}, ${fmt(so.mtd.s/X.days)} ₸ в день`,mln(so.mtd.s)+' млн ₸','',P(so.prev&&pct(so.mtd.s/X.days,so.prev.s/X.prevDays)),P(so.ly&&pct(so.mtd.s/X.days,so.ly.s/X.lyDays)))}
+    h+=r('Загрузка','',c.occ.toFixed(0)+'%','',PP(pv&&c.occ-pv.occ),PP(l&&c.occ-l.occ));
+    h+=r('Средняя цена за ночь','',fmt(c.adr)+' ₸','',P(pv&&pct(c.adr,pv.adr)),P(l&&pct(c.adr,l.adr)));
+    h+=r('Отмены',`${c.cx} из ${c.cr} броней`,(c.cr?c.cx/c.cr*100:0).toFixed(0)+'%','',PX(pv&&pv.cr?c.cx/c.cr*100-pv.cx/pv.cr*100:null),PX(l&&l.cr?c.cx/c.cr*100-l.cx/l.cr*100:null));
+    if(m){h+=grp(`Прогноз на ${MN[CI]}`);h+=r('Выручка за месяц',`осталось заработать ${mln(m.fc-c.sales)} млн ₸`,mln(m.fc)+' млн ₸','',P(pv&&pct(m.fc,pv.sales)),P(l&&pct(m.fc,l.sales)))}
+    {const D=DEBTS?.props?.[p];if(D){h+=grp(`Долги гостей – на ${(t=>t.slice(8,10)+'.'+t.slice(5,7)+' '+t.slice(11,16))(D.at)}`);
+      const own=D.out.n-(D.out.bk?.n||0),ownS=D.out.s-(D.out.bk?.s||0);
+      h+=r('Выехали, не оплатили',`${own} ${pl(own,['бронь','брони','броней'])} с ресепшн и сайта${D.out.bk?.n?` · ещё ${D.out.bk.n} от Booking на ${fmt(D.out.bk.s)} ₸ – Booking может платить позже`:''}`,`<span class="${ownS>0?'down':''}">${fmt(ownS)} ₸</span>`,'','','');
+      h+=r('Живут сейчас, не оплачено',`${D.in.n} ${pl(D.in.n,['бронь','брони','броней'])} – взять оплату до выезда`,fmt(D.in.s)+' ₸','','','')}}
+    {const K=CTRL?.props?.[p];if(K){const dd=t=>t.slice(8,10)+'.'+t.slice(5,7)+'.'+t.slice(2,4);
+      h+=grp('Контроль собственника');
+      const R=K.repairs;h+=r('Номера на ремонте',R.now?R.list.slice(0,5).map(x=>`${x.room} – с ${dd(x.from)}${x.days>30?` (${x.days} дн.)`:''}`).join(', ')+(R.list.length>5?` и ещё ${R.list.length-5}`:'')+` · за ${MN[CI]} уже −${fmt(R.lostMonth)} ₸`:'сейчас нет',R.now?`<span class="down">${R.now} · −${fmt(R.perDay)} ₸ в день</span>`:'0','','','');
+      const C=K.cancelPaid;h+=r('Отменены, но оплата принята',C.n?`возврат в Контуре не проведён – проверить: ${C.list.slice(0,3).map(x=>'№'+x.no+' – '+fmt(x.paid)+' ₸').join(', ')}${C.n>3?` и ещё ${C.n-3}`:''}`:'таких броней нет',C.n?`<span class="down">${C.n} · ${fmt(C.s)} ₸</span>`:'0','','','');
+      const L=K.low;h+=r('Продано сильно ниже обычной цены',L.n?`обычная цена ночи ${fmt(L.median)} ₸, эти – дешевле на 40% и больше: ${L.list.slice(0,3).map(x=>'№'+x.no+' – '+fmt(x.night)+' ₸').join(', ')}${L.n>3?` и ещё ${L.n-3}`:''}`:'таких броней нет',L.n?`<span class="down">${L.n} ${pl(L.n,['бронь','брони','броней'])}</span>`:'0','','','');
+      const N=K.noRate;h+=r('Брони без тарифа',`создано ${N.b}, отменено ${N.x} в ${MP[CI]} · в ${MP[PI]} – ${N.pb} и ${N.px}. Без тарифа не видно, откуда гость и по какой цене`,`${N.b} / ${N.x}`,'','','');
+      const E=K.exec;h+=r('Выполнены ли советы по цене',E.n?`советы от ${dd(E.from)}: цена в Контуре изменилась в нужную сторону на 5% и больше`:'проверка начнётся завтра – сегодня записаны советы и цены тарифов',E.n?`<span class="${E.ok<E.n?'down':'up'}">${E.ok} из ${E.n}</span>`:'<span class="flat">с завтра</span>','','','')}}
+    const rows=FC[p].rows.filter(x=>x.dd>=1&&x.d.startsWith(CUR));
+    {h+=grp('Вперёд, отзывы, точность');
+      if(rows.length){const o=rows.reduce((t,x)=>t+x.otb,0)/rows.length,e=rows.reduce((t,x)=>t+x.exp,0)/rows.length;h+=r(`Забронировано на ${new Date(rows[0].d+'T00:00:00').getDate()}–${new Date(rows.at(-1).d+'T00:00:00').getDate()} ${MG[CI]}`,`обычно к этому дню ${e.toFixed(0)}%`,o.toFixed(0)+'%',`<span class="flat">к обычному</span> ${PP(o-e)}`,'','')}
+      {const A=ACC?.props?.[p]?.acc;const h7=A?.h7,h1=A?.h1;
+        h+=r('Точность прогноза загрузки',h7&&h7.n?`прогноз за 7 дней до даты против факта, ${h7.n} ${pl(h7.n,['день','дня','дней'])}${h1&&h1.n?` · за 1 день – ошибка ${h1.mae.toFixed(0)} п.п.`:''}`:'проверка запущена: прогноз на 1 день – с 15 ноября, на 7 дней – с 21 ноября',h7&&h7.n?`± ${h7.mae.toFixed(0)} п.п.`:'<span class="flat">копим данные</span>','','','')}
+      if(rv){const n1=v=>v.toFixed(1).replace('.',',');h+=r('Оценка Booking',`${fmt(rv.total)} отзывов, за 30 дней – ${rv.n30}`,n1(rv.score),rv.avg30!=null?`<span class="flat">за 30 дней</span> <b>${n1(rv.avg30)}</b>`:'','','')}}
+    return `<div class="panel go" data-go="forecast" data-p="${p}" tabindex="0" role="link"><div class="row"><h2>${NAMES[p]}</h2><span class="flat" style="font-size:13px">нажмите – цены и прогноз по отелю ›</span></div>
+     <div class="tbl"><table class="mt hb"><thead><tr><th style="text-align:left">Показатель</th><th class="sep">Сейчас</th><th>к среднему дню ${MG[CI]}</th><th>к ${MD2[PI]}</th><th>к ${MD2[CI]} ${lyY}</th></tr></thead><tbody>${h}</tbody></table></div></div>`}).join('');
+}
+function moneyTable(props){
+  const P=v=>v==null?'<span class="flat">–</span>':`<span class="pill ${v<0?'dn':'up'}">${sg(v)}</span>`;
+  const r=(n,ps,cls)=>{const S=f=>ps.reduce((t,p)=>t+(f(p)||0),0);const y=YDAY?.props?S(p=>YDAY.props[p]?.sales):null,m=S(p=>get(p,CUR)?.sales),pv=S(p=>get(p,PREV)?.sales),f=S(p=>GROWTH?.props?.[p]?.month?.fc);
+    const lyOk=ps.every(p=>get(p,ly(CUR))),lm=lyOk?S(p=>get(p,ly(CUR)).sales):null;
+    return `<tr class="${cls||''}"><td>${n}</td><td class="s sep">${y!=null?fmt(y):'–'}</td><td>${y!=null?P(pct(y,m/PD)):''}</td>
+     <td class="s sep">${mln(m)} млн</td><td>${P(pct(m/PD,pv/DAYS(PREV)))}</td><td>${lyOk?P(pct(m/PD,lm/DAYS(ly(CUR)))):P(null)}</td>
+     <td class="s sep">${f?mln(f)+' млн':'–'}</td><td>${f?P(pct(f,pv)):''}</td><td>${lyOk&&f?P(pct(f,lm)):P(null)}</td></tr>`};
+  return `<div class="panel"><h2>Деньги по отелям</h2><div class="sub">Сумма и разница в процентах. Нажмите на отель ниже – откроются цены и прогноз по нему.</div>
+  <div class="tbl"><table class="mt"><thead><tr><th></th><th class="g sep" colspan="2">За сутки, ${(d=>d.getDate()+' '+MG[d.getMonth()])(new Date((YDAY?.d||META.updated)+'T00:00:00'))}</th><th class="g sep" colspan="3">${RANGE}</th><th class="g sep f" colspan="3">Прогноз на ${MN[CI]}</th></tr>
+  <tr><th style="text-align:left">Отель</th><th class="sep">₸</th><th>к среднему дню</th><th class="sep">сумма</th><th>к ${MD2[PI]}</th><th>к ${+CUR.slice(0,4)-1}</th><th class="sep">сумма</th><th>к ${MD2[PI]}</th><th>к ${+CUR.slice(0,4)-1}</th></tr></thead>
+  <tbody>${props.map(p=>r(NAMES[p],[p])).join('')}${r('Все отели',props,'tot')}</tbody></table></div>
+  <div class="note">«К среднему дню» – вчера против среднего дня ${MG[CI]}. ${RANGE} сравниваем с ${MT[PI]} и ${MT[CI]} ${+CUR.slice(0,4)-1} по выручке в среднем за день – в месяцах разное число дней. Прогноз – с целым месяцем. «–» – у Сейфуллина прошлого года нет, объект открылся в 2026 году.</div></div>`;
+}
+function hotelCards(props){
+  return `<div class="hotels">${props.map(p=>{const c=get(p,CUR),pv=get(p,PREV);if(!c)return '';const pace=pv?pct(c.sales/PD,pv.sales/DAYS(PREV)):null;
+    const w=FC[p].rows.filter(r=>r.dd>=1&&r.dd<=7);const f7=w.reduce((s,r)=>s+r.fc,0)/w.length,b7=w.reduce((s,r)=>s+r.base,0)/w.length;
+    const acts=FC[p].rows.filter(r=>r.dd>=1&&r.dd<=14&&r.act!=='Держать').length;const gap=f7-b7;
+    const st=(pace!=null&&pace<=-15)||gap<=-15?'red':(acts||(pace!=null&&pace<-5)||gap<-5)?'yel':'grn';
+    const ST={red:'Нужно действие',yel:'Стоит посмотреть',grn:'Всё в порядке'};
+    const y=YDAY?.props?.[p],dY=y?pct(y.sales,c.sales/PD):null,m=GROWTH?.props?.[p]?.month;
+    const col=v=>v==null?'':`style="color:var(--${v<0?'bad':'good'})"`;
+    const fcCmp=m?(m.ly?['год назад – '+mln(m.ly)+' млн',pct(m.fc,m.ly),'к прошлому году']:[MN[PI]+' – '+mln(m.prev)+' млн, прошлого года нет',pct(m.fc,m.prev),'к '+MD2[PI]]):null;
+    return `<div class="hcard go" data-go="forecast" data-p="${p}" tabindex="0" role="link"><div class="hd"><h3>${NAMES[p]}</h3><span class="stp ${st}">${ST[st]}</span></div>
+     ${(()=>{const r=REVIEWS?.props?.[p];if(!r)return '';const d=r.avg30!=null?r.avg30-r.score:null;const n1=v=>String(v.toFixed(1)).replace('.',',');
+       return `<div class="hr"><i style="background:${d!=null&&d<-0.1?'var(--bad)':'var(--good)'}"></i><span class="k">Оценка Booking<small>${fmt(r.total)} отзывов · за 30 дней – ${r.n30}</small></span><span class="v">${n1(r.score)}<small ${d!=null?col(d):''}>${r.avg30!=null?`за 30 дней ${n1(r.avg30)} ${d<-0.05?'↓':d>0.05?'↑':'='}`:''}</small></span></div>`})()}
+     <div class="occ7">Следующие 7 дней: прогноз загрузки ${f7.toFixed(0)}%, обычно ${b7.toFixed(0)}%<div class="b"><div class="f" style="width:${Math.min(100,f7)}%"></div><div class="n" style="left:${Math.min(99,b7)}%"></div></div></div></div>`}).join('')}</div>`;
+}
+const TAGGO={'Цена':'forecast','Цены сети':'comp','Паритет':'comp','Отмены':'cancel','Отзывы':'bad','Месяц':'overview'};
+function badLatest(props){
+  if(!BAD)return '';const L=props.flatMap(p=>(BAD.props[p]||[]).map(r=>({p,r}))).filter(x=>x.r[4]&&x.r[4]!=='none'||x.r[5]).sort((a,b)=>a.r[0]<b.r[0]?1:-1).slice(0,4);
+  const nAll=props.reduce((s,p)=>s+(BAD.props[p]||[]).filter(r=>(new Date(META.updated+'T00:00:00')-new Date(r[0]+'T00:00:00'))/864e5<=30).length,0);
+  return `<div class="panel go" data-go="bad" tabindex="0" role="link"><h2>Плохие отзывы</h2><div class="sub">Оценка ниже 8 · за 30 дней – ${nAll}. Последние с текстом:</div>
+   <div class="rv5">${L.map(({p,r})=>`<div class="it ${r[1]<=4?'bad':''}"><div class="h"><span class="pill ${r[1]<=4?'dn':''}" style="${r[1]<=4?'':'background:var(--warn-soft);color:var(--warn)'}">${r[1]}</span><b style="color:var(--fg)">${dl2(r[0])}</b>${props.length>1?`<span>${NAMES[p]}</span>`:''}</div><p>${esc((r[5]||r[4]).slice(0,160))}${(r[5]||r[4]).length>160?'…':''}</p></div>`).join('')||'<div class="note">Плохих отзывов с текстом нет.</div>'}</div>
+   <div class="note" style="color:var(--accent-text);font-weight:600">Все отзывы и темы жалоб →</div></div>`;
+}
+function monthChart(props){
+  const months=[...new Set(props.flatMap(p=>DATA[p].months.map(o=>o.m)))].sort().slice(-13);
+  const fact=months.map(m=>props.reduce((s,p)=>s+(get(p,m)?.sales||0),0)/1e6);
+  const fcv=GROWTH?props.reduce((s,p)=>s+(GROWTH.props[p]?.month?.fc||0),0)/1e6:null;
+  const W=900,H=280,ml0=44,mr=12,mt=24,mb=32,iw=W-ml0-mr,ih=H-mt-mb,n=months.length,st=iw/n,bw=st*.58,ym=nice(Math.max(...fact,fcv||0));
+  const X=i=>ml0+st*i,Y=v=>mt+ih-v/ym*ih;let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Выручка по месяцам">`;
+  let i0=0;months.forEach((m,i)=>{if(i===n-1||months[i+1].slice(0,4)!==m.slice(0,4)){if(m.slice(0,4)%2)s+=`<rect x="${X(i0)}" y="${mt-16}" width="${st*(i-i0+1)}" height="${ih+16}" fill="var(--y-odd)"/>`;
+    s+=`<text x="${X(i0)+6}" y="${mt-4}" font-size="12" font-weight="700" fill="var(--ink2)">${m.slice(0,4)}</text>`;if(i<n-1)s+=`<line x1="${X(i+1)}" x2="${X(i+1)}" y1="${mt-16}" y2="${mt+ih}" stroke="var(--ink2)" stroke-width="2"/>`;i0=i+1}});
+  for(let t=0;t<=4;t++){const v=ym*t/4;s+=`<line x1="${ml0}" x2="${W-mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${ml0-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v.toFixed(0)}</text>`}
+  months.forEach((m,i)=>{const x=X(i)+(st-bw)/2,last=m===CUR;
+    if(last&&fcv){s+=`<rect x="${x}" y="${Y(fcv)}" width="${bw}" height="${Y(0)-Y(fcv)}" rx="4" fill="var(--warn-soft)" stroke="var(--orange)" stroke-width="2" stroke-dasharray="5 4"/><text x="${x+bw/2}" y="${Y(fcv)-6}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--warn)">${fcv.toFixed(1).replace('.',',')}</text>`}
+    s+=`<rect x="${x}" y="${Y(fact[i])}" width="${bw}" height="${Y(0)-Y(fact[i])}" rx="4" fill="var(--brand)"/>`;
+    s+=last&&fcv?`<text x="${x+bw/2}" y="${Math.min(Y(fact[i])+16,Y(0)-4)}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${fact[i].toFixed(1).replace('.',',')}</text>`:`<text x="${x+bw/2}" y="${Y(fact[i])-6}" text-anchor="middle" font-size="11" fill="var(--ink2)">${fact[i].toFixed(1).replace('.',',')}</text>`;
+    s+=`<text x="${x+bw/2}" y="${H-10}" text-anchor="middle" font-size="12" fill="var(--ink2)">${MON[+m.slice(5)-1]}</text>`});
+  return `<div class="panel go" data-go="overview" tabindex="0" role="link"><h2>Выручка по месяцам${props.length>1?', все отели':' – '+NAMES[props[0]]}</h2><div class="sub">млн ₸. Годы разделены фоном и линией. ${cap(MN[CI])}: синим – заработано за ${PD} ${pl(PD,['день','дня','дней'])}, оранжевым пунктиром – прогноз на весь месяц.</div><div class="chart">${s}</svg></div></div>`;
+}
+
+function bookedPanel(props){
+  const nm=(()=>{const d=new Date(CUR+'-01T00:00:00');d.setMonth(d.getMonth()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')})();
+  const avg=(rows,k)=>rows.length?rows.reduce((s,r)=>s+r[k],0)/rows.length:null;
+  const row=p=>{const R=FC[p].rows,a=R.filter(r=>r.dd>=1&&r.d.startsWith(CUR)),b=R.filter(r=>r.d.startsWith(nm));
+    const cell=(rs,lbl)=>{if(!rs.length)return '<td>–</td><td>–</td>';const o=avg(rs,'otb'),e=avg(rs,'exp'),nights=Math.round(rs.reduce((s,r)=>s+r.otb/100*DATA[p].rooms,0));
+      return `<td><b>${o.toFixed(0)}%</b><div class="flat" style="font-size:12px">${fmt(nights)} ночей</div></td><td class="${o>=e-3?'up':'down'}">${e.toFixed(0)}%<div style="font-size:12px">${sg(pct(o,e))}</div></td>`};
+    return `<tr><td>${NAMES[p]}</td>${cell(a)}${cell(b)}</tr>`};
+  const a0=FC[props[0]].rows.filter(r=>r.dd>=1&&r.d.startsWith(CUR));const dd=a0.length?`${new Date(a0[0].d+'T00:00:00').getDate()}–${new Date(a0[a0.length-1].d+'T00:00:00').getDate()} ${MG[CI]}`:'';
+  return `<div class="panel go" data-go="forecast" tabindex="0" role="link"><h2>Сколько уже забронировано</h2><div class="sub">Доля номеров с бронями на даты вперёд и сколько обычно бывает к этому дню</div>
+   <div class="tbl"><table><thead><tr><th>Отель</th><th>${dd}</th><th>Обычно</th><th>${cap(MN[(CI+1)%12])}</th><th>Обычно</th></tr></thead><tbody>${props.map(row).join('')}</tbody></table></div>
+   <div class="note">«Обычно» – сколько к этому дню бывает забронировано по сроку бронирования прошлых месяцев. Ночи – номера с бронями, сумма по датам.</div></div>`;
+}
+function compPanel(props){
+  if(!COMP)return '';const med=a=>{a=a.filter(x=>x).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+  const D=META.compDates||['Будни','Выходные'];
+  const city=p=>p==='shym'?'shym':'alm';const isAQ=n=>/^NOMAD /i.test(n);
+  const mine=p=>{const b=COMP[city(p)].bk;return p==='ray'?b.find(r=>/сейфуллина/i.test(r[0])):p==='shym'?b.find(r=>r[5]):b.find(r=>r[5]&&!/сейфуллина/i.test(r[0]))};
+  const rows=props.map(p=>{const m=mine(p);const oth=COMP[city(p)].bk.filter(r=>!isAQ(r[0])).map(r=>r[1]).filter(Boolean);const md=med(oth);
+    const tr=PARITY?.rows?.[p]?.trip?.[0]?.p;const os=PARITY?.rows?.[p]?.ostrovok?.[0]?.p;
+    return `<tr><td>${NAMES[p]}</td><td><b>${m&&m[1]?fmt(m[1]):'–'}</b></td><td>${md?fmt(md):'–'}<div class="flat" style="font-size:12px">${oth.length?fmt(Math.min(...oth))+'–'+fmt(Math.max(...oth)):''}</div></td><td class="${m&&md?(m[1]>md?'down':'up'):''}">${m&&md?sg(pct(m[1],md)):'–'}</td><td>${tr?fmt(tr):'–'}</td><td>${os?fmt(os):'–'}</td></tr>`}).join('');
+  return `<div class="panel go" data-go="comp" tabindex="0" role="link"><h2>Цены: мы и конкуренты</h2><div class="sub">${D[0]}, 1 гость, за ночь, ₸. Конкуренты – капсульные отели и хостелы Booking в том же городе, без AQ.</div>
+   <div class="tbl"><table><thead><tr><th>Отель</th><th>Мы, Booking</th><th>Медиана конкурентов</th><th>Мы к медиане</th><th>Мы, Trip.com</th><th>Мы, Островок</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="note" style="color:var(--accent-text);font-weight:600">Все конкуренты, 2ГИС и динамика цен →</div></div>`;
+}
+function today(){
+  const el=document.getElementById('v-today');const props=PROPS();const A=actionList(props);const top=A.slice(0,5);
+  el.innerHTML=`${periodsBand(props)}
+  ${props.length>1?`<h2 style="margin:18px 4px 0">Каждый отель по цифрам</h2>${hotelBoards(props)}`:hotelCards(props)}
+  <div class="two"><div class="panel"><h2>Что сделать</h2><div class="sub">${A.length?`Главное из ${A.length} ${pl(A.length,['рекомендации','рекомендаций','рекомендаций'])}. Нажмите на пункт – откроется раздел.`:'Сегодня реагировать не на что.'}</div>
+   <div class="t5">${top.map((x,i)=>`<div class="it go" data-go="${TAGGO[x.tag]||'rec'}" tabindex="0" role="link"><div class="n">${i+1}</div><div><span class="tg">${x.tag}</span><b>${x.t}</b><div class="s">${x.s}</div></div><span class="ar">›</span></div>`).join('')}</div>
+   ${A.length>5?`<button class="gobtn" onclick="go('rec')">Все рекомендации – ${A.length}</button>`:''}</div>
+   ${badLatest(props)}</div>
+  <div class="two" style="grid-template-columns:1fr 1fr">${bookedPanel(props)}${compPanel(props)}</div>
+  ${monthChart(props)}
+  <details class="more"><summary>Таблица за сутки и итоги по отелям</summary>${ydayPanel(props)}${ownerView(props)}</details>
+  <div class="note">Обновлено: ${META.label}. Цену в Контуре меняет сотрудник.</div>`;
+}
+function rec(){
+  const el=document.getElementById('v-rec');const props=PROPS();const A=actionList(props);
+  const SV={bad:'t-bad',warn:'t-warn',info:'t-neutral',good:'t-good'};
+  el.innerHTML=`<div class="panel"><h2>Что сделать</h2><div class="sub">${A.length?`${A.length} ${pl(A.length,['пункт','пункта','пунктов'])}.`:'Сегодня реагировать не на что: цены, отмены и отзывы в норме.'}</div>
+  ${A.length?`<ol class="todo">${A.map(x=>`<li class="sv-${x.sev}"><span class="tag ${SV[x.sev]}">${x.tag}</span><div><b>${x.t}</b>${x.items?`<div class="flat" style="font-size:14px">${x.s}</div>`:`<p>${x.s}</p>`}</div></li>`).join('')}</ol>`:''}</div>
+  ${next14(props)}`;
+}
+
+/* ---------- КАЛЕНДАРЬ ЗАГРУЗКИ ---------- */
+function calendar(p){
+  const rows=FC[p].rows;if(!rows.length)return '';
+  const first=new Date(rows[0].d+'T00:00:00');const lead=(first.getDay()+6)%7;
+  const AC={'Снизить':'dn','Поднять':'up','Акция':'pr'};
+  const cells=Array(lead).fill('<span class="cd empty"></span>').concat(rows.map(r=>{const d=new Date(r.d+'T00:00:00');const v=r.fc;
+    const t=`${dl2(r.d)}, ${wd2(r.d)}: забронировано ${r.otb.toFixed(0)}%, прогноз ${r.fc.toFixed(0)}%${r.ly?', год назад '+r.ly.toFixed(0)+'%':''}${r.act!=='Держать'?', подсказка: '+r.act.toLowerCase():''}`;
+    return `<span class="cd${d.getDate()===1?' m1':''}" style="background:${heatBg(v)};color:${heatFg(v)}" title="${t}">${d.getDate()===1?`<i>${MON[d.getMonth()]}</i>`:''}${d.getDate()}${AC[r.act]?`<em class="${AC[r.act]}"></em>`:''}</span>`}));
+  return `<div class="cal-wrap"><div class="cal">${['пн','вт','ср','чт','пт','сб','вс'].map(x=>`<span class="ch">${x}</span>`).join('')}${cells.join('')}</div>
+   <div class="legend" style="margin-top:10px"><span><i class="sw" style="background:${heatBg(15)}"></i>до 30%</span><span><i class="sw" style="background:${heatBg(55)}"></i>около 55%</span><span><i class="sw" style="background:${heatBg(90)}"></i>90% и выше</span><span><em class="dn"></em>снизить</span><span><em class="up"></em>поднять</span><span><em class="pr"></em>акция на ранние брони</span></div></div>`;
+}
+
+/* ---------- ИСТОРИЯ ---------- */
+const CH_COL={'Booking.com':'var(--c1)','Ресепшн':'var(--c2)','Trip.com':'var(--c3)','2ГИС':'var(--c4)','Expedia':'var(--c5)'};
+function histRows(props){
+  const months=[...new Set(props.flatMap(p=>DATA[p].months.map(o=>o.m)))].sort();
+  return months.map(m=>{const xs=props.map(p=>[p,get(p,m)]).filter(x=>x[1]);
+    const sales=xs.reduce((s,[,o])=>s+o.sales,0),rooms=xs.reduce((s,[p])=>s+DATA[p].rooms,0);
+    const nights=xs.reduce((s,[,o])=>s+(o.adr?o.sales/o.adr:0),0),days=DAYS(m);
+    const occ=rooms?xs.reduce((s,[p,o])=>s+o.occ*DATA[p].rooms,0)/rooms:0;
+    const cr=xs.reduce((s,[,o])=>s+o.cr,0),cx=xs.reduce((s,[,o])=>s+o.cx,0),cxs=xs.reduce((s,[,o])=>s+o.cxs,0);
+    const los=xs.length===1?xs[0][1].los:null;
+    return {m,partial:m===CUR,occ,adr:nights?sales/nights:0,sales,revpar:rooms?sales/(rooms*days):0,cr,cx,cxs,los,n:xs.length}});
+}
+function histView(){
+  const el=document.getElementById('v-history');const props=PROPS();const H=histRows(props);const byM=Object.fromEntries(H.map(h=>[h.m,h]));
+  const lyS=h=>{const o=byM[ly(h.m)];if(!o||o.n!==h.n)return null;return h.partial?pct(h.sales/PD,o.sales/DAYS(ly(h.m))):pct(h.sales,o.sales)};
+  const months=H.map(h=>h.m).slice(-14);
+  const agg=m=>{const c={};props.forEach(p=>{const o=get(p,m);if(!o)return;Object.entries(o.ch).forEach(([k,v])=>c[k]=(c[k]||0)+v.s)});return c};
+  const tops=Object.entries(months.reduce((t,m)=>{Object.entries(agg(m)).forEach(([k,v])=>t[k]=(t[k]||0)+v);return t},{})).sort((a,b)=>b[1]-a[1]).map(x=>x[0]).filter(k=>CH_COL[k]);
+  const W=720,Hh=250,ml0=46,mr=10,mt=10,mb=28,iw=W-ml0-mr,ih=Hh-mt-mb,step=iw/months.length,bw=Math.min(34,step*.7);
+  let svg=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Доля площадок в выручке по месяцам">`;
+  [0,25,50,75,100].forEach(v=>{const y=mt+ih-v/100*ih;svg+=`<line x1="${ml0}" x2="${W-mr}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${ml0-8}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`});
+  months.forEach((m,i)=>{const a=agg(m),t=Object.values(a).reduce((s,v)=>s+v,0)||1;let y=mt+ih;const x=ml0+step*i+(step-bw)/2;
+    [...tops,'Прочие'].forEach(k=>{const v=k==='Прочие'?Object.entries(a).filter(([kk])=>!tops.includes(kk)).reduce((s,[,v])=>s+v,0):(a[k]||0);const h=v/t*ih;if(h<=0)return;y-=h;
+      svg+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${CH_COL[k]||'var(--ly)'}"><title>${ml(m)} · ${k}: ${(v/t*100).toFixed(0)}%</title></rect>`});
+    if(i%Math.ceil(months.length/12)===0||i===months.length-1)svg+=`<text x="${x+bw/2}" y="${Hh-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${ml(m)}</text>`});
+  svg+='</svg>';
+  const rowsDesc=[...H].reverse();
+  el.innerHTML=`<div class="panel"><div class="row"><h2>История по месяцам – ${NAMES[PROP]}</h2><button class="btn" id="csvBtn" type="button">Скопировать таблицу</button></div>
+  <div class="sub">Все месяцы из Контура, новые сверху.${props.length>1?' Для нескольких объектов загрузка и доход на номер взвешены по числу номеров; «1 из 3» – в том месяце в Контуре был только один объект. Сравнение с прошлым годом – только когда в том месяце работали те же объекты.':''} ${cap(MN[CI])} – за ${PD} дн., сравнение в среднем за день.</div>
+  <div class="tbl"><table><thead><tr><th>Месяц</th><th>Загрузка</th><th>Средняя цена, ₸</th><th>Выручка, млн ₸</th><th>К прошлому году</th><th>Доход на номер, ₸</th><th>Броней</th><th>Отмен</th><th>Отмены, %</th>${props.length===1?'<th>Ночей в брони</th>':''}</tr></thead><tbody>
+  ${rowsDesc.map(h=>{const y=lyS(h),cr=h.cr?h.cx/h.cr*100:0;return `<tr><td>${ml(h.m)}${props.length>1&&h.n<props.length?` <span class="flat" style="font-size:12px">${h.n} из ${props.length}</span>`:''}${h.partial?` <span class="tag t-neutral">1–${PD}</span>`:''}</td><td>${h.occ.toFixed(0)}%</td><td>${fmt(h.adr)}</td><td>${mln(h.sales)}</td><td class="${cls(y)}">${sg(y)}</td><td>${fmt(h.revpar)}</td><td>${fmt(h.cr)}</td><td>${fmt(h.cx)}</td><td>${h.cr?`<span class="tag ${cr>=25?'t-bad':cr>=15?'t-warn':'t-neutral'}">${cr.toFixed(0)}%</span>`:'–'}</td>${props.length===1?`<td>${h.los?h.los.toFixed(1).replace('.',','):'–'}</td>`:''}</tr>`}).join('')}
+  </tbody></table></div><div class="note" id="csvNote">Кнопка копирует таблицу в буфер обмена – её можно вставить в Excel или Google Таблицы.</div></div>
+  <div class="panel"><h2>Откуда приходит выручка</h2><div class="sub">Доля площадок в выручке по месяцам, последние ${months.length} мес.</div>
+  <div class="legend">${[...tops,'Прочие'].map(k=>`<span><i style="background:${CH_COL[k]||'var(--ly)'};height:10px"></i>${k}</span>`).join('')}</div><div class="chart">${svg}</div></div>`;
+  document.getElementById('csvBtn').addEventListener('click',()=>{
+    const head=['Месяц','Загрузка %','Средняя цена','Выручка','Доход на номер','Броней','Отмен','Сумма отмен'];
+    const txt=[head.join('\t'),...rowsDesc.map(h=>[h.m+(h.partial?' (1–'+PD+')':''),h.occ.toFixed(1),Math.round(h.adr),Math.round(h.sales),Math.round(h.revpar),h.cr,h.cx,Math.round(h.cxs)].join('\t'))].join('\n');
+    const n=document.getElementById('csvNote');
+    const fallback=()=>{n.innerHTML='Не удалось скопировать автоматически. Выделите текст ниже и скопируйте вручную.<textarea id="csvTxt" readonly rows="6" style="width:100%;margin-top:8px;font:12px/1.4 ui-monospace,monospace">'+esc(txt)+'</textarea>';const t=document.getElementById('csvTxt');t.focus();t.select()};
+    try{navigator.clipboard.writeText(txt).then(()=>{n.textContent='Таблица скопирована. Вставьте её в Excel или Google Таблицы.'},fallback)}catch(e){fallback()}
+  });
+}
+
+/* ---------- ДИНАМИКА ЦЕН КОНКУРЕНТОВ ---------- */
+function compTrend(c){
+  if(!COMPH||COMPH.length<2)return '';
+  const H=COMPH.slice(-10).filter(h=>h[c]);if(H.length<2)return '';
+  const med=a=>{a=a.filter(x=>x).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+  const isAQ=n=>/^NOMAD (Достык|Сейфуллина|Шымкент)/i.test(n);
+  const aq=[...new Set(H.flatMap(h=>Object.keys(h[c]).filter(isAQ)))];
+  const last=H[H.length-1][c],prev=H[H.length-2][c];
+  const ch=Object.keys(last).filter(k=>prev[k]&&prev[k][0]&&last[k][0]&&Math.abs(last[k][0]/prev[k][0]-1)>=0.05).map(k=>`<li><b>${esc(k)}</b> ${fmt(prev[k][0])} → ${fmt(last[k][0])} ₸ <span class="${last[k][0]>prev[k][0]?'up':'down'}">${sg(pct(last[k][0],prev[k][0]))}</span></li>`);
+  const dd=s=>{const d=new Date(s+'T00:00:00');return d.getDate()+' '+MON[d.getMonth()]};
+  return `<div class="panel"><h2>Как меняются цены – ${c==='alm'?'Алматы':'Шымкент'}</h2><div class="sub">Цена на ближайший будний день из каждого утреннего среза Booking, ₸. «Рынок» – медиана цен конкурентов в подборке.</div>
+  <div class="tbl"><table><thead><tr><th>Объект</th>${H.map(h=>`<th>${dd(h.date)}</th>`).join('')}</tr></thead><tbody>
+  ${aq.map(n=>`<tr class="aq"><td>${esc(n)}</td>${H.map(h=>`<td>${h[c][n]?.[0]?fmt(h[c][n][0]):'–'}</td>`).join('')}</tr>`).join('')}
+  <tr><td>Рынок, медиана</td>${H.map(h=>{const v=med(Object.entries(h[c]).filter(([k])=>!isAQ(k)).map(([,v])=>v[0]));return `<td>${v?fmt(v):'–'}</td>`}).join('')}</tr>
+  <tr><td>Конкурентов в срезе</td>${H.map(h=>`<td>${Object.keys(h[c]).filter(k=>!isAQ(k)).length}</td>`).join('')}</tr>
+  </tbody></table></div>
+  ${ch.length?`<div class="note"><b>Изменения за последний день, от 5%:</b></div><ul class="chg">${ch.join('')}</ul>`:'<div class="note">За последний день цены в подборке не менялись больше чем на 5%.</div>'}</div>`;
+}
+
+/* ---------- 2ГИС: блок «Капсульные отели» ---------- */
+const SEGN={aq:'AQ',capsule:'Капсульный',hostel:'Хостел',other:'Другое'};
+function gisPanel(c){
+  const L=GIS[c]||[];if(!L.length)return '';
+  const med=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+  const night=x=>x.price&&!x.monthly;
+  const others=L.filter(x=>x.seg!=='aq'),caps=L.filter(x=>x.seg==='capsule'),aq=L.filter(x=>x.seg==='aq');
+  const mAll=med(others.filter(night).map(x=>x.price)),mCap=med(caps.filter(night).map(x=>x.price));
+  const CN={alm:'Алматы',shym:'Шымкент'};
+  const label=x=>x.seg==='aq'?(/Назарбаева/.test(x.addr)?'AQ Сейфуллина 45':/Достык/.test(x.addr)?'AQ Достык 12':x.name):x.name;
+  const aqLines=aq.map(a=>{const cheaper=others.filter(x=>night(x)&&x.price<a.price).length,tot=others.filter(night).length;
+    const more=others.filter(x=>(x.n||0)>(a.n||0)).length;
+    return `<li><b>${label(a)}</b>: цена от ${fmt(a.price)} ₸ – дороже ${cheaper} из ${tot} объектов блока${mCap?`, медиана капсульных ${fmt(mCap)} ₸`:''}. Оценка ${a.rating.toFixed(1).replace('.',',')}, ${fmt(a.n||0)} ${pl(a.n||0,['оценка','оценки','оценок'])}${more?` – больше оценок у ${more} ${pl(more,['объекта','объектов','объектов'])}`:' – больше всех в блоке'}.</li>`}).join('');
+  const k=(l,v,d)=>`<div class="kpi" style="background:var(--bg)"><div class="l">${l}</div><div class="v" style="font-size:24px">${v}</div><div class="d flat">${d}</div></div>`;
+  /* точечная диаграмма: цена × оценка, размер – число оценок */
+  const P=L.filter(x=>night(x)&&x.rating);const W=720,H=300,m={l:46,r:18,t:14,b:34},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const xMax=nice(Math.max(...P.map(x=>x.price))),yMin=Math.max(3,Math.floor(Math.min(...P.map(x=>x.rating))*5)/5-0.2),yMax=5;
+  const X=v=>m.l+v/xMax*iw,Y=v=>m.t+ih-(v-yMin)/(yMax-yMin)*ih,Rr=n=>3+Math.sqrt(n||1)/2.2;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Цена и оценка объектов блока">`;
+  for(let t=0;t<=4;t++){const v=xMax*t/4;svg+=`<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${m.t+ih}" stroke="var(--line)"/><text x="${X(v)}" y="${H-12}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmt(v)}</text>`}
+  for(let v=yMin;v<=yMax+1e-9;v+=0.2){svg+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v.toFixed(1).replace('.',',')}</text>`}
+  if(mCap)svg+=`<line x1="${X(mCap)}" x2="${X(mCap)}" y1="${m.t}" y2="${m.t+ih}" stroke="var(--brand)" stroke-dasharray="4 4"/><text x="${X(mCap)+5}" y="${m.t+ih-6}" font-size="11" fill="var(--accent-text)">медиана капсульных</text>`;
+  const order={hostel:0,other:0,capsule:1,aq:2};
+  [...P].sort((a,b)=>order[a.seg]-order[b.seg]).forEach(x=>{const col=x.seg==='aq'?'var(--orange)':x.seg==='capsule'?'var(--brand)':'var(--ly)';
+    svg+=`<circle cx="${X(x.price)}" cy="${Y(x.rating)}" r="${Rr(x.n)}" fill="${col}" fill-opacity="${x.seg==='hostel'||x.seg==='other'?.55:.85}" stroke="var(--panel)" stroke-width="1"><title>${esc(label(x))} · ${fmt(x.price)} ₸ · ${String(x.rating).replace('.',',')} · ${x.n||0} оценок</title></circle>`;
+    if(x.seg==='aq'){const big=(x.n||0)>=100;svg+=`<text x="${big?X(x.price):X(x.price)-Rr(x.n)-5}" y="${big?Y(x.rating)+Rr(x.n)+15:Y(x.rating)+4}" text-anchor="${big?'middle':'end'}" font-size="12" font-weight="700" fill="var(--fg)">${esc(label(x))}</text>`}});
+  svg+=`<text x="${m.l+iw}" y="${H-1}" text-anchor="end" font-size="11" fill="var(--muted)">цена от, ₸</text></svg>`;
+  const rows=f=>[...L].filter(f).sort((a,b)=>(b.seg==='aq')-(a.seg==='aq')||(night(b)?b.price:0)-(night(a)?a.price:0));
+  const tr=x=>`<tr class="${x.seg==='aq'?'aq':''}"><td style="text-align:left;white-space:normal;min-width:180px">${esc(label(x))}${x.branches>1?` <span class="flat" style="font-size:12px">${x.branches} ${pl(x.branches,['филиал','филиала','филиалов'])}</span>`:''}</td><td><span class="tag ${x.seg==='capsule'?'t-good':x.seg==='aq'?'t-warn':'t-neutral'}">${SEGN[x.seg]}</span></td><td>${x.price?(x.monthly?`<span class="flat" title="Похоже на цену за месяц, в сравнение не входит">${fmt(x.price)}*</span>`:fmt(x.price)):'–'}</td><td>${x.rating?x.rating.toFixed(1).replace('.',','):'–'}</td><td>${x.n?fmt(x.n):'–'}</td><td>${x.ad?'да':''}</td><td style="text-align:left;white-space:normal;min-width:200px">${esc(x.addr)}</td></tr>`;
+  const id='gisF-'+c;const fltCur=(gisPanel.f||{})[c]||'caps';
+  setTimeout(()=>{const s=document.getElementById(id);if(s)s.onchange=e=>{gisPanel.f=Object.assign(gisPanel.f||{},{[c]:e.target.value});comp()}},0);
+  const sel=fltCur==='all'?rows(()=>true):rows(x=>x.seg==='capsule'||x.seg==='aq');
+  return `<div class="panel"><div class="row"><h2>2ГИС – блок «Капсульные отели», ${CN[c]}</h2>
+   <select id="${id}" aria-label="Какие объекты показать"><option value="caps" ${fltCur==='caps'?'selected':''}>Капсульные и AQ</option><option value="all" ${fltCur==='all'?'selected':''}>Все объекты блока</option></select></div>
+   <div class="sub">Все объекты, которые 2ГИС показывает по запросу «Капсульные отели» (${L.length}). Цена «от» – из карточки 2ГИС. Снято ${GIS.updated.split('-').reverse().join('.')}.</div>
+   <div class="kpis" style="margin-bottom:14px">
+    ${k('Объектов в блоке',L.length,`капсульных – ${caps.length}, с рекламой – ${L.filter(x=>x.ad).length}`)}
+    ${mCap?k('Медиана капсульных',fmt(mCap)+' ₸',`от ${fmt(Math.min(...caps.filter(night).map(x=>x.price)))} до ${fmt(Math.max(...caps.filter(night).map(x=>x.price)))} ₸`):''}
+    ${k('Медиана всего блока',fmt(mAll)+' ₸','в основном хостелы')}
+   </div>
+   <ul class="sub2" style="font-size:14px;margin-bottom:12px">${aqLines}</ul>
+   ${P.length>4?`<div class="legend"><span><i style="background:var(--orange);height:10px"></i>AQ</span><span><i style="background:var(--brand);height:10px"></i>капсульные</span><span><i style="background:var(--ly);height:10px"></i>хостелы и другие</span><span>размер точки – число оценок</span></div><div class="chart">${svg}</div>`:''}
+   <div class="tbl" style="margin-top:12px"><table><thead><tr><th>Объект</th><th>Тип</th><th>Цена от, ₸</th><th>Оценка</th><th>Оценок</th><th>Реклама</th><th style="text-align:left">Адрес</th></tr></thead><tbody>${sel.map(tr).join('')}</tbody></table></div>
+   <div class="note">* Цена от 30 000 ₸ – похоже, это цена за месяц; в медианы и диаграмму не входит. Тип взят из названия и рубрики 2ГИС: «капсульный» – если в них есть слово «капсульный» или Capsule.</div></div>`;
+}
+
+/* ---------- ПЛОХИЕ ОТЗЫВЫ ---------- */
+const THEMES=[
+ ['Шум и слышимость',/шум|слыш|noise|noisy|soundproof|slamm|hellhörig|gehorig|hört|zuknall|방음|alarms/i],
+ ['Тесные номера',/тесн|маленьк|крошечн|шкаф|small|tiny|minuscule|narrow|suitcase|ضيق|صغر|좁|küçük|petite|placard|breddare/i],
+ ['Чистота и запах',/чист|волос|мусор|запах|clean|hair|q-tips|smell|smok|不干净|temizlen|شعر|쓰레기/i],
+ ['Санузлы и душ',/туалет|душ|санузел|toilet|shower|bathroom|bidet|wc |duschm|tuvalet|حمام/i],
+ ['Персонал',/персонал|администратор|ресепшен|staff|rude|recep|personeel/i],
+ ['Воздух и температура',/воздух|душно|холод|тепло|кондиц|вентилятор|stuffy|warm|cold|تكييف|寒|추움|空气/i],
+ ['Кровать и бельё',/кроват|матра|подушк|бельё|bed|mattress|pillow|sheets|säng|床/i],
+ ['Двери и замки',/двер|замок|замки|door|lock|sloten|concertina/i],
+ ['Свет и электричество',/свет|электр|luce|정전|розетк|outlet/i],
+ ['Заселение и правила',/заселил|заселен|arrive|алкогол|alcohol|halal|booked accommodation/i],
+ ['Завтрак',/завтрак|яичниц|breakfast|petit-dej/i],
+ ['Цена',/цена\/качество|value for money|qualité-prix|preis|가격|가성비|ценa/i],
+];
+function badThemes(r){const t=[r[3],r[4],r[5]].join(' ');return THEMES.filter(([,re])=>re.test(t)).map(x=>x[0])}
+function badView(){
+  const el=document.getElementById('v-bad');
+  if(!BAD){el.innerHTML='<div class="panel">Плохие отзывы появятся после следующего обновления данных.</div>';return}
+  const props=PROPS();const now=new Date(META.updated+'T00:00:00');const age=d=>(now-new Date(d+'T00:00:00'))/864e5;
+  const st=badView.st||(badView.st={per:'365',sev:'all',txt:true});
+  const all=props.flatMap(p=>(BAD.props[p]||[]).map(r=>({p,r})));
+  const inPer=x=>st.per==='all'||age(x.r[0])<=+st.per;
+  const sevOk=x=>st.sev==='all'||(st.sev==='14'?x.r[1]<=4:st.sev==='56'?x.r[1]>=5&&x.r[1]<7:x.r[1]>=7);
+  const L=all.filter(x=>inPer(x)&&sevOk(x)&&(!st.txt||x.r[4]&&x.r[4]!=='none')).sort((a,b)=>a.r[0]<b.r[0]?1:-1);
+  const cnt=(p,days,f=()=>true)=>(BAD.props[p]||[]).filter(r=>age(r[0])<=days&&f(r)).length;
+  const n=v=>String(v).replace('.',',');
+  const sc=s=>`<span class="tag ${s<=4?'t-bad':s<7?'t-warn':'t-neutral'}">${s}</span>`;
+  /* темы за выбранный период */
+  const per=all.filter(inPer);const tc={};per.forEach(x=>badThemes(x.r).forEach(t=>tc[t]=(tc[t]||0)+1));
+  const tl=Object.entries(tc).sort((a,b)=>b[1]-a[1]);const tmax=tl.length?tl[0][1]:1;
+  /* по месяцам, последние 18 */
+  const ms=[];{const d=new Date(now.getFullYear(),now.getMonth(),1);for(let i=17;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);ms.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'))}}
+  const mc=ms.map(m=>{const xs=all.filter(x=>x.r[0].startsWith(m));return [xs.filter(x=>x.r[1]<=4).length,xs.filter(x=>x.r[1]>=5&&x.r[1]<7).length,xs.filter(x=>x.r[1]>=7).length]});
+  const W=520,H=240,ml0=30,mr=16,mt=10,mb=28,iw=W-ml0-mr,ih=H-mt-mb,step=iw/ms.length,bw=Math.min(26,step*.66);const ymax=Math.max(4,...mc.map(a=>a[0]+a[1]+a[2]));const yM=Math.ceil(ymax/4)*4;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Плохие отзывы по месяцам" style="min-width:0">`;
+  for(let t=0;t<=4;t++){const v=yM*t/4,y=mt+ih-v/yM*ih;svg+=`<line x1="${ml0}" x2="${W-mr}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${ml0-6}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`}
+  const SC=['var(--bad)','var(--orange)','var(--ly)'];
+  mc.forEach((a,i)=>{let y=mt+ih;const x=ml0+step*i+(step-bw)/2;a.forEach((v,k)=>{if(!v)return;const h=v/yM*ih;y-=h;svg+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${SC[k]}"><title>${ml(ms[i])}: ${['1–4','5–6','7'][k]} – ${v}</title></rect>`});
+    if(i%3===2)svg+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${ml(ms[i])}</text>`});
+  svg+='</svg>';
+  const k=(l,v,d,c)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${c||'flat'}">${d}</div></div>`;
+  el.innerHTML=`<div class="kpis">${props.map(p=>{const a30=cnt(p,30),a90=cnt(p,90),w90=cnt(p,90,r=>r[1]<=4),y=cnt(p,365);
+     return k(`${NAMES[p]} · ниже 8`,`${a30} за 30 дней`,`${a90} за 90 дней, из них 1–4 – ${w90}. За год – ${y}.`,a30>=3||w90>=2?'down':'flat')}).join('')}</div>
+  <div class="grid2">
+   <div class="panel"><h2>На что жалуются</h2><div class="sub">Темы в отзывах ниже 8 за ${st.per==='all'?'всё время':st.per==='365'?'год':st.per+' дней'}. Один отзыв может попасть в несколько тем.</div>
+    ${tl.length?tl.map(([t,v])=>`<div class="bar" style="grid-template-columns:170px 1fr 36px"><span>${t}</span><div class="tr"><i style="width:${v/tmax*100}%;background:var(--orange)"></i></div><span class="num">${v}</span></div>`).join(''):'<div class="note">Жалоб с текстом за этот период нет.</div>'}
+    <div class="note">Темы определяются по словам в тексте, на русском и основных языках гостей. Отзывы без текста в темы не попадают.</div></div>
+   <div class="panel"><h2>Плохие отзывы по месяцам</h2><div class="sub">Сколько отзывов ниже 8 оставили за месяц</div>
+    <div class="legend"><span><i style="background:var(--bad);height:10px"></i>1–4</span><span><i style="background:var(--orange);height:10px"></i>5–6</span><span><i style="background:var(--ly);height:10px"></i>7</span></div><div class="chart">${svg}</div></div>
+  </div>
+  <div class="panel"><div class="row"><h2>Все плохие отзывы – ${NAMES[PROP]}</h2><div class="filters">
+    <select id="badPer" aria-label="Период"><option value="30">30 дней</option><option value="90">90 дней</option><option value="365">год</option><option value="all">с января 2025</option></select>
+    <select id="badSev" aria-label="Оценка"><option value="all">все ниже 8</option><option value="14">только 1–4</option><option value="56">5–6</option><option value="7">7</option></select>
+    <label class="chk"><input type="checkbox" id="badTxt"> только с текстом</label></div></div>
+   <div class="sub">${L.length} ${pl(L.length,['отзыв','отзыва','отзывов'])}, новые сверху. Booking.com. Сразу на русском, оригинал – под кнопкой «Оригинал». Имена гостей не сохраняются.</div>
+   ${L.length?`<div class="revs">${L.map(({p,r})=>{const th=badThemes(r);return `<article class="rev sv-${r[1]<=4?'bad':r[1]<7?'warn':'info'}">
+     <div class="rh">${sc(r[1])}<b>${dl2(r[0])} ${r[0].slice(0,4)}</b>${props.length>1?`<span class="flat">${NAMES[p]}</span>`:''}${r[2]?`<span class="flat">${r[2]==='Ж'?'женский':'мужской'} блок</span>`:''}${th.map(t=>`<span class="tag t-neutral">${t}</span>`).join('')}</div>
+     ${r[3]?`<div class="rt">${esc(r[6]||r[3])}</div>`:''}
+     ${r[4]&&r[4]!=='none'?`<p class="ro">${esc(r[5]||r[4])}</p>${r[5]?`<details class="orig"><summary>Оригинал</summary><p class="rr">${esc(r[3]&&r[6]?r[3]+'. ':'')}${esc(r[4])}${r[4].length>=199?'…':''}</p></details>`:''}`:'<p class="flat" style="margin:4px 0 0">Гость поставил оценку без текста.</p>'}
+   </article>`}).join('')}</div>`:'<div class="note">По выбранным условиям отзывов нет.</div>'}
+   <div class="note">Тексты обрезаны до 200 знаков, как их хранит сборщик. Полный отзыв – в экстранете Booking.</div></div>`;
+  const pe=document.getElementById('badPer'),se=document.getElementById('badSev'),te=document.getElementById('badTxt');
+  pe.value=st.per;se.value=st.sev;te.checked=st.txt;
+  pe.onchange=()=>{st.per=pe.value;badView()};se.onchange=()=>{st.sev=se.value;badView()};te.onchange=()=>{st.txt=te.checked;badView()};
+}
+
+/* ---------- Навигация ---------- */
+const props=document.getElementById('props');
+props.innerHTML=Object.entries(NAMES).map(([k,v])=>`<button data-p="${k}" aria-pressed="${k===PROP}">${v}</button>`).join('');
+function render(){
+  document.querySelectorAll('#props button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===PROP));
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===TAB));
+  document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+TAB);
+  ({today,rec,overview,channels,cancel,forecast,growth,reviews,comp,findings,history:histView,bad:badView})[TAB]();
+}
+props.addEventListener('click',e=>{const b=e.target.closest('button');if(b){PROP=b.dataset.p;render()}});
+const TABS=[...document.querySelectorAll('#tabs button')].map(b=>b.dataset.v);
+const fromHash=()=>{const h=location.hash.slice(1);return TABS.includes(h)?h:'today'};
+TAB=fromHash();
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b){TAB=b.dataset.v;try{history.replaceState(null,'','#'+TAB)}catch(_){location.hash=TAB}render()}});
+window.addEventListener('hashchange',()=>{const t=fromHash();if(t!==TAB&&DATA){TAB=t;render()}});
+const load=n=>fetch(n,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(n);return r.json()});
+Promise.all([load('growth.json').then(g=>{GROWTH=g}).catch(()=>{}),load('parity.json').then(g=>{PARITY=g}).catch(()=>{}),load('reviews.json').then(g=>{REVIEWS=g}).catch(()=>{}),load('comp-history.json').then(g=>{COMPH=g}).catch(()=>{}),load('gis.json').then(g=>{GIS=g}).catch(()=>{}),load('bad-reviews.json').then(g=>{BAD=g}).catch(()=>{}),load('yday.json').then(g=>{YDAY=g}).catch(()=>{}),load('money.json').then(g=>{MONEY=g}).catch(()=>{}),load('accuracy.json').then(g=>{ACC=g}).catch(()=>{}),load('debts.json').then(g=>{DEBTS=g}).catch(()=>{}),load('control.json').then(g=>{CTRL=g}).catch(()=>{})]).finally(()=>Promise.all(['data.json','booking.json','comp.json','findings.json','pace.json','forecast.json','meta.json'].map(load)).then(([a,b,c,d,e,f,g])=>{DATA=a;BOOKING=b;COMP=c;FINDINGS=d;PACE=e;FC=f;META=g;CUR=META.partial;PD=META.partialDays;CI=+CUR.slice(5)-1;PI=(CI+11)%12;PREV=(CI===0?(+CUR.slice(0,4)-1)+'-12':CUR.slice(0,5)+String(CI).padStart(2,'0'));RANGE=(PD===1?'1 ':'1–'+PD+' ')+MG[CI];document.getElementById('meta').textContent='Данные Контур.Отеля и Booking.com на '+META.label+' · обновляется каждое утро в 07:40';render()}).catch(e=>{document.getElementById('meta').textContent='Не удалось загрузить данные: '+e.message+'. Обновите страницу.'}));
+</script>
+<script>new MutationObserver(()=>{const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())if(/\bAQ\b/.test(n.nodeValue))n.nodeValue=n.nodeValue.replace(/\bAQ\b/g,"NOMAD")}).observe(document.body,{childList:true,subtree:true,characterData:false});</script>
+
+</html>
