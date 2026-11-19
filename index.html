@@ -19,7 +19,7 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:Inter,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
-img,video{max-width:100%;display:block}
+img,video{max-width:100%;height:auto;display:block}
 a{color:inherit}
 p{margin:0}
 h1,h2,h3{margin:0;text-wrap:balance}
@@ -112,6 +112,44 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+/* ticker */
+.ticker{background:var(--y);color:var(--ink);overflow:hidden;white-space:nowrap;border-block:1px solid #E6CF00}
+.ticker.k{background:var(--ink);color:var(--dsoft);border-color:var(--dline)}
+.ticker .track{display:inline-flex;gap:0;padding-block:16px;animation:tick 48s linear infinite;will-change:transform}
+.ticker.k .track{animation-duration:36s;animation-direction:reverse}
+.ticker:hover .track{animation-play-state:paused}
+.ticker span{font-size:17px;font-weight:600;padding-left:28px;display:inline-block}
+.ticker span::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.45;margin-left:28px;vertical-align:middle}
+.ticker b{font-weight:800}
+.ticker .up{color:#0E7A3A}.ticker .dn{color:#B4231B}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* charts */
+.charts{display:grid;grid-template-columns:repeat(6,1fr);gap:20px;margin-top:56px}
+.ch{background:var(--dcard);border:1px solid var(--dline);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:14px;min-width:0;grid-column:span 2}
+.ch.w{grid-column:span 6}.ch.h{grid-column:span 3}
+@media (max-width:900px){.charts{grid-template-columns:1fr}.ch,.ch.w,.ch.h{grid-column:auto}}
+.ch .tag{color:var(--y)}
+.ch h3{color:var(--paper);font-size:22px}
+.ch .sub{font-size:15px;color:var(--mute)}
+.ch svg{width:100%;height:auto;display:block;overflow:visible}
+.ch .ax{fill:var(--mute);font-size:11px;font-family:Inter,Arial,sans-serif}
+.ch .lbl{fill:var(--dsoft);font-size:13px;font-family:Inter,Arial,sans-serif}
+.ch .val{fill:var(--paper);font-size:13px;font-weight:700;font-family:Inter,Arial,sans-serif}
+.ch .grid{stroke:var(--dline);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--dsoft)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.bar{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0);transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+.hbar{transform-box:fill-box;transform-origin:0 50%;transform:scaleX(0);transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+.ch.in .bar{transform:scaleY(1)}.ch.in .hbar{transform:scaleX(1)}
+.draw{transition:stroke-dashoffset 2.2s cubic-bezier(.4,0,.2,1)}
+.fadeval{opacity:0;transition:opacity .6s ease .9s}.ch.in .fadeval{opacity:1}
+.big{font-size:clamp(34px,4vw,48px);font-weight:800;letter-spacing:-.03em;color:var(--y);line-height:1}
+/* photo */
+.me{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.me .ph{position:relative;width:140px;height:140px;border-radius:50%;overflow:hidden;background:var(--dcard);border:3px solid var(--y);flex:none;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;color:var(--y)}
+.me .ph img{width:100%;height:100%;object-fit:cover}
+@media (prefers-reduced-motion:reduce){.ticker .track{animation:none}.bar,.hbar{transform:none;transition:none}.draw{transition:none}}
 </style>
 </head>
 <body>
@@ -119,7 +157,7 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 <header class="top">
 <div class="wrap">
 <a href="#top" aria-label="Ava Solutions"><img src="img/ava_y.svg" alt="Ava Solutions"></a>
-<nav><a href="#video">Видео</a><a href="#telegram">Telegram</a><a href="#dashboard">Дашборд</a><a href="#result">Результат</a><a href="#start">Подключение</a></nav>
+<nav><a href="#video">Видео</a><a href="#telegram">Telegram</a><a href="#charts">Графики</a><a href="#dashboard">Дашборд</a><a href="#result">Результат</a><a href="#start">Подключение</a></nav>
 <a class="btn y" href="demo/">Открыть демо</a>
 </div>
 </header>
@@ -138,6 +176,7 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 </div>
 </section>
 
+<div class="ticker " aria-hidden="true"><div class="track"><span>Вчера <b>1 099 816 ₸</b> <b class="up">+8%</b> к среднему дню</span><span>Прогноз месяца <b>28,6 млн ₸</b></span><span>Отмены на Booking <b>в 3 раза</b> выше нормы</span><span>Booking дороже Trip.com на <b>46%</b></span><span><b>7 номеров</b> на ремонте – <b>60 тыс ₸</b> в сутки</span><span><b>20 броней</b> отменены без возврата</span><span>Оценка гостей <b>9,2</b> · за 30 дней <b>9,1</b></span><span>Брони вперёд <b>–32%</b> к обычному темпу</span><span>Сводка в Telegram каждый день в <b>07:40</b></span><span>Вчера <b>1 099 816 ₸</b> <b class="up">+8%</b> к среднему дню</span><span>Прогноз месяца <b>28,6 млн ₸</b></span><span>Отмены на Booking <b>в 3 раза</b> выше нормы</span><span>Booking дороже Trip.com на <b>46%</b></span><span><b>7 номеров</b> на ремонте – <b>60 тыс ₸</b> в сутки</span><span><b>20 броней</b> отменены без возврата</span><span>Оценка гостей <b>9,2</b> · за 30 дней <b>9,1</b></span><span>Брони вперёд <b>–32%</b> к обычному темпу</span><span>Сводка в Telegram каждый день в <b>07:40</b></span></div></div>
 <section id="problem">
 <div class="wrap">
 <p class="eyebrow">Как обычно</p>
@@ -186,6 +225,21 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 </div>
 </section>
 
+<section class="dark" id="charts">
+<div class="wrap">
+<p class="eyebrow">Цифры в движении</p>
+<h2 class="reveal">Система сама строит графики. Каждое утро – свежие.</h2>
+<p class="lead">Пример на демо-данных сети NOMAD. Вымышленная сеть, логика и графики – как в рабочей версии.</p>
+<div class="charts">
+<div class="ch w" id="c-fc"><p class="tag">Прогноз</p><h3>Загрузка на 90 дней вперёд</h3><p class="sub">Сколько уже забронировано, сколько будет и сколько было год назад.</p>
+<div class="legend"><span><i style="background:#5A5950"></i>Забронировано</span><span><i style="background:var(--y)"></i>Прогноз</span><span><i style="background:transparent;border:2px dashed var(--dsoft);width:14px;height:0;border-radius:0"></i>Год назад</span></div><div class="svg"></div></div>
+<div class="ch h" id="c-rev"><p class="tag">Выручка</p><h3>Рост по месяцам, вся сеть</h3><p class="sub">Ноябрь 2025 – октябрь 2026.</p><div class="svg"></div></div>
+<div class="ch h" id="c-chan"><p class="tag">Площадки</p><h3>Откуда приходят деньги</h3><p class="sub">Доля выручки за октябрь.</p><div class="svg"></div></div>
+<div class="ch h" id="c-par"><p class="tag">Паритет цен</p><h3>Одна ночь – три цены</h3><p class="sub">Тот же номер, те же даты, 24–25 ноября.</p><div class="svg"></div></div>
+<div class="ch h" id="c-cat"><p class="tag">Отзывы</p><h3>Что гости ценят</h3><p class="sub">Оценки Booking по категориям.</p><div class="svg"></div></div>
+</div>
+</div>
+</section>
 <section id="dashboard">
 <div class="wrap">
 <p class="eyebrow">Дашборд</p>
@@ -255,10 +309,10 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 <p class="eyebrow">Первая неделя на реальной сети</p>
 <h2 class="reveal">Что система нашла за 7 дней</h2>
 <div class="grid2">
-<div class="fact reveal"><p class="n">3–10×</p><p>Отмен на Booking больше, чем в лучший месяц. Видно в тот же день, а не в конце месяца.</p></div>
-<div class="fact reveal"><p class="n">25–46%</p><p>Booking дороже Trip.com на те же даты. Риск потерять позиции в поиске.</p></div>
-<div class="fact reveal"><p class="n">7 номеров</p><p>Месяцами стоят «на ремонте». Больше 60 тысяч ₸ в сутки недополученной выручки.</p></div>
-<div class="fact reveal"><p class="n">20 броней</p><p>Отменены, оплата удержана, возврата нет. Нужна проверка, куда ушли деньги.</p></div>
+<div class="fact reveal"><p class="n">3–<span class="cnt" data-from="3" data-to="10">3</span>×</p><p>Отмен на Booking больше, чем в лучший месяц. Видно в тот же день, а не в конце месяца.</p></div>
+<div class="fact reveal"><p class="n">25–<span class="cnt" data-to="46">0</span>%</p><p>Booking дороже Trip.com на те же даты. Риск потерять позиции в поиске.</p></div>
+<div class="fact reveal"><p class="n"><span class="cnt" data-to="7">0</span> номеров</p><p>Месяцами стоят «на ремонте». Больше 60 тысяч ₸ в сутки недополученной выручки.</p></div>
+<div class="fact reveal"><p class="n"><span class="cnt" data-to="20">0</span> броней</p><p>Отменены, оплата удержана, возврата нет. Нужна проверка, куда ушли деньги.</p></div>
 </div>
 </div>
 </section>
@@ -293,7 +347,7 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 <div class="wrap">
 <img class="logo" src="img/ava_y.svg" alt="Ava Solutions">
 <p class="eyebrow">Покажу на ваших данных</p>
-<h2>Ян Ильченко</h2>
+<div class="me"><div class="ph">ЯИ<img src="https://app.interactionfqm.com/uploads/logo/us/uslvzgw49oplatujrjvy.webp" alt="Ян Ильченко" onerror="this.remove()" style="position:absolute;opacity:0" onload="this.style.position='static';this.style.opacity=1;this.parentNode.firstChild.textContent=''"></div><div><h2>Ян Ильченко</h2><p class="lead" style="margin-top:8px">26 лет в гостеприимстве: отели, рестораны, бани и SPA. Казахстан, СНГ, ОАЭ, Европа.</p></div></div>
 <p class="phone">+7 705 803 20 98</p>
 <p class="lead" style="margin-top:12px">WhatsApp, Telegram. Ava Solutions – аналитика и ИИ-агенты для отелей, бань, SPA и ресторанов.</p>
 <div class="btns">
@@ -303,11 +357,60 @@ footer{background:var(--ink);color:var(--mute);font-size:13px;padding-block:28px
 </div>
 </div>
 </section>
+<div class="ticker k" aria-hidden="true"><div class="track"><span>Контур.Отель</span><span>Booking.com</span><span>Trip.com</span><span>Островок</span><span>2ГИС</span><span>Expedia</span><span>Airbnb</span><span>Hostelworld</span><span>Telegram</span><span>Отзывы гостей</span><span>Цены конкурентов</span><span>Прогноз на 90 дней</span><span>Контур.Отель</span><span>Booking.com</span><span>Trip.com</span><span>Островок</span><span>2ГИС</span><span>Expedia</span><span>Airbnb</span><span>Hostelworld</span><span>Telegram</span><span>Отзывы гостей</span><span>Цены конкурентов</span><span>Прогноз на 90 дней</span></div></div>
 <footer><div class="wrap">© Ava Solutions, 2026. Демо-данные вымышленные.</div></footer>
 
 <script>
 document.querySelectorAll('.pic img,.tg .ph img').forEach(function(im){im.addEventListener('click',function(){var d=document.createElement('div');d.className='lb';d.innerHTML='<img alt="">';d.firstChild.src=im.src;d.firstChild.alt=im.alt;d.addEventListener('click',function(){d.remove()});document.addEventListener('keydown',function k(e){if(e.key==='Escape'){d.remove();document.removeEventListener('keydown',k)}});document.body.appendChild(d)})});
 if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{rootMargin:'0px 0px -8% 0px'});document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)})}else{document.querySelectorAll('.reveal').forEach(function(el){el.classList.add('in')})}
+</script>
+<script>
+var D={"fc": {"otb": [58.2, 43.3, 40.3, 26.9, 23.9, 29.9, 26.9, 31.3, 17.9, 13.4, 20.9, 17.9, 19.4, 16.4, 17.9, 14.9, 16.4, 14.9, 19.4, 13.4, 17.9, 25.4, 25.4, 18.2, 9, 13.4, 10.4, 13.4, 16.4, 10.4, 13.4, 7.5, 6, 9, 10.4, 13.4, 13.4, 10.4, 6, 6, 7.5, 10.4, 9, 11.9, 11.9, 9, 13.4, 11.8, 10.3, 8.8, 7.4, 8.8, 5.9, 2.9, 1.5, 4.4, 4.4, 2.9, 2.9, 2.9, 4.4, 4.4, 1.5, 1.5, 4.4, 5.9, 5.9, 5.9, 1.5, 0, 1.5, 1.5, 0, 0, 0, 0, 0, 0, 1.5, 1.5, 1.5, 1.5, 0, 2.9, 2.9, 2.9, 2.9, 1.5, 0, 2.9], "fc": [58.2, 58.2, 57.4, 49.4, 53.2, 58.4, 58.5, 65.0, 61.5, 55.1, 64.4, 62.0, 65.6, 64.8, 71.1, 69.2, 66.6, 62.5, 72.8, 69.8, 73.3, 82.1, 81.8, 77.9, 65.6, 63.5, 64.3, 73.0, 70.3, 68.6, 58.1, 52.7, 58.1, 61.1, 74.4, 85.7, 84.9, 80.6, 78.1, 71.4, 75.3, 77.9, 83.2, 79.8, 83.4, 79.6, 83.4, 86.1, 79.5, 82.3, 82.8, 79.4, 81.0, 80.3, 79.5, 54.2, 48.7, 49.0, 56.9, 55.9, 47.0, 60.2, 51.6, 51.0, 65.0, 75.2, 70.7, 84.1, 82.3, 78.8, 81.3, 68.1, 83.0, 83.1, 79.3, 80.7, 73.0, 70.3, 57.7, 59.7, 55.2, 62.1, 56.2, 53.1, 58.7, 68.8, 70.3, 70.0, 58.0, 65.5], "ly": [85.9, 87.3, 73.6, 74.2, 83.3, 79.1, 80.6, 82.5, 93.8, 85.1, 88.2, 85.3, 86.8, 86.8, 92.5, 91, 83.6, 77.9, 87, 88.4, 87, 89.9, 88.2, 89.6, 81.5, 72.7, 76.1, 83.6, 75.8, 78.8, 61.2, 59.7, 67.7, 68.2, 83.1, 93.9, 92.4, 89.4, 90.1, 81.4, 84.3, 84.3, 91.5, 84.3, 88.2, 85.9, 85.9, 90.1, 83.3, 87.5, 88.9, 83.3, 87.3, 88.7, 88.6, 57.1, 50.7, 52.1, 60.6, 59.2, 47.9, 62.3, 55.1, 54.3, 67.1, 76.8, 71.8, 86.1, 87.5, 84.7, 86.1, 71.8, 88.7, 88.7, 84.5, 85.9, 77.5, 74.6, 60, 62, 57.1, 64.3, 59.2, 53.6, 59.4, 70, 71.4, 72.1, 60.6, 66.2], "d0": "2026-11-14"}, "months": [{"m": "2025-11", "s": 18482260}, {"m": "2025-12", "s": 18469345}, {"m": "2026-01", "s": 19162223}, {"m": "2026-02", "s": 15888434}, {"m": "2026-03", "s": 17935640}, {"m": "2026-04", "s": 20507901}, {"m": "2026-05", "s": 22368991}, {"m": "2026-06", "s": 23159543}, {"m": "2026-07", "s": 26177516}, {"m": "2026-08", "s": 30232421}, {"m": "2026-09", "s": 29876499}, {"m": "2026-10", "s": 41310911}], "ch": [["Booking.com", 19029758], ["Ресепшн", 10989324], ["Trip.com", 5173389], ["2ГИС", 3178811], ["Expedia", 930561], ["Островок", 746774], ["Другие", 1262295]], "cat": {"Расположение": 9.7, "Чистота": 9.3, "Соотношение цена/качество": 9.2, "Удобства": 9.2, "Комфорт": 9.3, "Персонал": 9.5, "Бесплатный Wi-Fi": 9}, "par": {"booking": 13572, "ostrovok": 12512, "trip": 9306}};
+(function(){
+var NS='http://www.w3.org/2000/svg';
+function el(t,a,txt){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e}
+function fmtM(v){return (v/1e6).toFixed(1).replace('.',',')}
+function nf(v){return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+var MN=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+// 1 forecast
+(function(){var W=1100,H=300,L=36,B=26,f=D.fc,n=f.otb.length,bw=(W-L)/n;var s=el('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Загрузка на 90 дней'});
+[0,25,50,75,100].forEach(function(v){var y=H-B-(H-B-10)*v/100;s.appendChild(el('line',{x1:L,x2:W,y1:y,y2:y,class:'grid'}));s.appendChild(el('text',{x:0,y:y+4,class:'ax'},v+'%'))});
+var y=function(v){return H-B-(H-B-10)*v/100};
+f.otb.forEach(function(v,i){var r=el('rect',{x:L+i*bw+1,y:y(v),width:Math.max(bw-2,1),height:H-B-y(v),fill:'#5A5950',rx:1.5,class:'bar'});r.style.transitionDelay=(i*12)+'ms';s.appendChild(r)});
+function line(arr,attrs){var d=arr.map(function(v,i){return (i?'L':'M')+(L+i*bw+bw/2).toFixed(1)+','+y(v).toFixed(1)}).join('');var p=el('path',Object.assign({d:d,fill:'none'},attrs));p.classList.add('draw');s.appendChild(p);return p}
+line(f.ly,{stroke:'#BDBBB1','stroke-width':1.6,'stroke-dasharray':'5 5',opacity:.8,class:'fadeval'});
+line(f.fc,{stroke:'#FFE600','stroke-width':3,'stroke-linejoin':'round'});
+var d0=new Date(f.d0);[0,30,60,89].forEach(function(i){var d=new Date(d0.getTime()+i*864e5);s.appendChild(el('text',{x:L+i*bw+bw/2,y:H-6,class:'ax','text-anchor':i?'middle':'start'},d.getDate()+' '+MN[d.getMonth()]))});
+document.querySelector('#c-fc .svg').appendChild(s)})();
+// 2 revenue
+(function(){var W=520,H=280,B=28,T=24,m=D.months,n=m.length,bw=W/n,mx=Math.max.apply(null,m.map(function(x){return x.s}));var s=el('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Выручка по месяцам'});
+m.forEach(function(x,i){var h=(H-B-T)*x.s/mx,yy=H-B-h,last=i==n-1;var r=el('rect',{x:i*bw+5,y:yy,width:bw-10,height:h,rx:6,fill:last?'#FFE600':'#4A4943',class:'bar'});r.style.transitionDelay=(i*70)+'ms';s.appendChild(r);
+var mm=+x.m.slice(5)-1;s.appendChild(el('text',{x:i*bw+bw/2,y:H-8,class:'ax','text-anchor':'middle'},MN[mm]));
+if(i==0||last){s.appendChild(el('text',{x:i*bw+bw/2,y:yy-8,class:'val fadeval','text-anchor':'middle'},fmtM(x.s)))}});
+var g=Math.round((m[n-1].s/m[0].s-1)*100);
+var wrap=document.querySelector('#c-rev .svg');wrap.appendChild(s);var p=document.createElement('p');p.className='sub';p.innerHTML='<span class="big">+<span class="cnt" data-to="'+g+'">0</span>%</span> за год, млн ₸';wrap.parentNode.insertBefore(p,wrap)})();
+// 3 channels donut
+(function(){var c=D.ch,tot=c.reduce(function(a,x){return a+x[1]},0),R=90,C=2*Math.PI*R,cols=['#FFE600','#F6F5F0','#9C9A90','#6E6D66','#4F4E49','#3B3A36','#2C2C29'];var s=el('svg',{viewBox:'0 0 520 240',role:'img','aria-label':'Доля выручки по площадкам'});
+var g=el('g',{transform:'translate(120 120) rotate(-90)'});s.appendChild(g);var off=0;
+c.forEach(function(x,i){var len=C*x[1]/tot;var ci=el('circle',{r:R,fill:'none',stroke:cols[i],'stroke-width':38,'stroke-dasharray':'0 '+C,'stroke-dashoffset':-off});ci.dataset.len=len;ci.style.transition='stroke-dasharray 1.1s cubic-bezier(.2,.8,.2,1) '+(i*160)+'ms';g.appendChild(ci);off+=len});
+s.appendChild(el('text',{x:120,y:116,class:'val','text-anchor':'middle','font-size':'26'},fmtM(tot)));s.appendChild(el('text',{x:120,y:138,class:'ax','text-anchor':'middle'},'млн ₸'));
+c.forEach(function(x,i){var yy=30+i*29;s.appendChild(el('rect',{x:262,y:yy-11,width:13,height:13,rx:3,fill:cols[i]}));s.appendChild(el('text',{x:284,y:yy,class:'lbl'},x[0]));s.appendChild(el('text',{x:518,y:yy,class:'val','text-anchor':'end'},Math.round(x[1]/tot*100)+'%'))});
+document.querySelector('#c-chan .svg').appendChild(s)})();
+// 4 parity
+(function(){var p=[['Booking',D.par.booking],['Островок',D.par.ostrovok],['Trip.com',D.par.trip]],mx=p[0][1],W=520;var s=el('svg',{viewBox:'0 0 '+W+' 200',role:'img','aria-label':'Цена одной ночи на трёх площадках'});
+p.forEach(function(x,i){var yy=14+i*62,w=(W-150)*x[1]/mx;s.appendChild(el('text',{x:0,y:yy+12,class:'lbl'},x[0]));var r=el('rect',{x:0,y:yy+22,width:w,height:24,rx:6,fill:i?'#4A4943':'#FFE600',class:'hbar'});r.style.transitionDelay=(i*180)+'ms';s.appendChild(r);s.appendChild(el('text',{x:w+10,y:yy+40,class:'val fadeval'},nf(x[1])+' ₸'))});
+var wrap=document.querySelector('#c-par .svg');wrap.appendChild(s);var d=Math.round((p[0][1]/p[2][1]-1)*100);var q=document.createElement('p');q.className='sub';q.innerHTML='<span class="big">+<span class="cnt" data-to="'+d+'">0</span>%</span> Booking дороже Trip.com';wrap.parentNode.insertBefore(q,wrap)})();
+// 5 categories
+(function(){var c=Object.entries(D.cat).sort(function(a,b){return b[1]-a[1]}),W=520,lo=8;var s=el('svg',{viewBox:'0 0 '+W+' '+(c.length*34),role:'img','aria-label':'Оценки по категориям'});
+c.forEach(function(x,i){var yy=i*34,w=(W-250)*(x[1]-lo)/(10-lo);var name=x[0].replace('Соотношение цена/качество','Цена/качество').replace('Бесплатный Wi-Fi','Wi-Fi');s.appendChild(el('text',{x:0,y:yy+19,class:'lbl'},name));s.appendChild(el('rect',{x:150,y:yy+7,width:W-250,height:16,rx:8,fill:'#2E2E2A'}));var r=el('rect',{x:150,y:yy+7,width:w,height:16,rx:8,fill:i==0?'#FFE600':'#9C9A90',class:'hbar'});r.style.transitionDelay=(i*90)+'ms';s.appendChild(r);s.appendChild(el('text',{x:W,y:yy+20,class:'val fadeval','text-anchor':'end'},x[1].toFixed(1).replace('.',',')))});
+document.querySelector('#c-cat .svg').appendChild(s)})();
+// prepare draw paths
+document.querySelectorAll('path.draw').forEach(function(p){var l=p.getTotalLength();if(!p.getAttribute('stroke-dasharray')){p.style.strokeDasharray=l;p.style.strokeDashoffset=l}});
+function count(e){if(e.dataset.done)return;e.dataset.done=1;var to=+e.dataset.to,fr=+(e.dataset.from||0),t0=null;function st(t){if(!t0)t0=t;var k=Math.min((t-t0)/1400,1);k=1-Math.pow(1-k,3);e.textContent=Math.round(fr+(to-fr)*k);if(k<1)requestAnimationFrame(st)}requestAnimationFrame(st)}
+function show(ch){ch.classList.add('in');ch.querySelectorAll('path.draw').forEach(function(p){if(p.style.strokeDashoffset)p.style.strokeDashoffset=0});ch.querySelectorAll('circle[data-len]').forEach(function(c){c.setAttribute('stroke-dasharray',c.dataset.len+' 9999')});ch.querySelectorAll('.cnt').forEach(count)}
+var targets=document.querySelectorAll('.ch,.fact');
+if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){show(e.target);io.unobserve(e.target)}})},{threshold:.25});targets.forEach(function(t){io.observe(t)})}else targets.forEach(show);
+})();
 </script>
 </body>
 </html>
